@@ -1,0 +1,1523 @@
+<!DOCTYPE html>
+<html lang="es" class="h-full bg-slate-900 text-slate-100">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Direccionamiento IP (IPv4 / IPv6 & VLSM)</title>
+    <!-- Tailwind CSS para Estilos Modernos -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .mono {
+            font-family: 'Fira Code', monospace;
+        }
+        /* Ocultar barra de scroll estéticamente */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+    </style>
+</head>
+<body class="min-h-full flex flex-col bg-slate-950 text-slate-100 selection:bg-indigo-500 selection:text-white">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800 bg-slate-900/50 backdrop-blur sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="bg-indigo-600 p-2 rounded-lg text-white shadow-lg shadow-indigo-500/30">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 3v2m6-2v2M9 19v2m6-2v2M5 9H3m2 6H3m18-6h-2m2 6h-2M7 19h10a2 2 0 002-2V7a2 2 0 00-2-2H7a2 2 0 00-2 2v10a2 2 0 002 2zM9 9h6v6H9V9z"></path>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="text-lg font-extrabold tracking-tight text-white flex items-center gap-2">
+                        IP <span class="text-indigo-400">NET-CALC</span>
+                    </h1>
+                    <p class="text-xs text-slate-400">Herramienta Profesional de Subneteo IPv4/IPv6 & VLSM</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-4">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-indigo-500/10 text-indigo-400 border border-indigo-500/20">
+                    Local WebApp v2.0
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        
+        <!-- Tab Navigation -->
+        <div class="border-b border-slate-800 mb-8 overflow-x-auto">
+            <nav class="flex space-x-1" aria-label="Tabs" id="main-tabs">
+                <button onclick="switchTab('dashboard')" id="tab-dashboard" class="px-4 py-2.5 font-medium text-sm rounded-t-lg transition-all duration-200 border-b-2 text-indigo-400 border-indigo-500 bg-slate-900/50 flex items-center gap-2 whitespace-nowrap">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                    Analizador Express
+                </button>
+                <button onclick="switchTab('ipv4-std')" id="tab-ipv4-std" class="px-4 py-2.5 font-medium text-sm rounded-t-lg transition-all duration-200 border-b-2 text-slate-400 border-transparent hover:text-slate-300 hover:border-slate-700 flex items-center gap-2 whitespace-nowrap">
+                    <span class="text-xs px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold">v4</span>
+                    Calculadora Estándar
+                </button>
+                <button onclick="switchTab('ipv4-vlsm')" id="tab-ipv4-vlsm" class="px-4 py-2.5 font-medium text-sm rounded-t-lg transition-all duration-200 border-b-2 text-slate-400 border-transparent hover:text-slate-300 hover:border-slate-700 flex items-center gap-2 whitespace-nowrap">
+                    <span class="text-xs px-1.5 py-0.5 rounded bg-emerald-500/10 text-emerald-400 font-bold">v4</span>
+                    Calculador VLSM
+                </button>
+                <button onclick="switchTab('ipv6-std')" id="tab-ipv6-std" class="px-4 py-2.5 font-medium text-sm rounded-t-lg transition-all duration-200 border-b-2 text-slate-400 border-transparent hover:text-slate-300 hover:border-slate-700 flex items-center gap-2 whitespace-nowrap">
+                    <span class="text-xs px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400 font-bold">v6</span>
+                    Analizador IPv6 & Prefijos
+                </button>
+                <button onclick="switchTab('ipv6-vlsm')" id="tab-ipv6-vlsm" class="px-4 py-2.5 font-medium text-sm rounded-t-lg transition-all duration-200 border-b-2 text-slate-400 border-transparent hover:text-slate-300 hover:border-slate-700 flex items-center gap-2 whitespace-nowrap">
+                    <span class="text-xs px-1.5 py-0.5 rounded bg-violet-500/10 text-violet-400 font-bold">v6</span>
+                    Subneteo IPv6
+                </button>
+                <button onclick="switchTab('converter')" id="tab-converter" class="px-4 py-2.5 font-medium text-sm rounded-t-lg transition-all duration-200 border-b-2 text-slate-400 border-transparent hover:text-slate-300 hover:border-slate-700 flex items-center gap-2 whitespace-nowrap">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4"/></svg>
+                    Conversor IP
+                </button>
+            </nav>
+        </div>
+
+        <!-- STREAMS_CHUNK: Diseñando el contenedor dinámico de vistas -->
+        <!-- Content Containers -->
+        <div id="tab-content-container">
+
+            <!-- ========================================== -->
+            <!-- VISTA: ANALIZADOR EXPRESS (HOME / QUICK PARSE) -->
+            <!-- ========================================== -->
+            <div id="content-dashboard" class="tab-pane block space-y-6">
+                <div class="bg-gradient-to-r from-indigo-900/40 to-slate-900 border border-slate-800 rounded-2xl p-6 sm:p-8">
+                    <div class="max-w-2xl">
+                        <h2 class="text-xl sm:text-2xl font-bold text-white mb-2">Analizador Express Multitool</h2>
+                        <p class="text-slate-400 text-sm mb-6">Ingresa cualquier dirección IP de red u host (IPv4 o IPv6, con o sin prefijo CIDR) para obtener un desglose inmediato e inteligente de sus parámetros.</p>
+                        
+                        <div class="flex flex-col sm:flex-row gap-3">
+                            <div class="relative flex-grow">
+                                <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-500">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                                </span>
+                                <input type="text" id="express-input" placeholder="Ej: 192.168.10.5/24 o 2001:db8::1/64" class="w-full bg-slate-950/80 border border-slate-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl py-3 pl-10 pr-4 text-white placeholder-slate-500 font-mono text-base outline-none transition-all">
+                            </div>
+                            <button onclick="analyzeExpress()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-medium px-6 py-3 rounded-xl shadow-lg shadow-indigo-600/20 active:scale-95 transition-all text-sm sm:text-base flex items-center justify-center gap-2">
+                                Analizar Ahora
+                            </button>
+                        </div>
+                        <div id="express-error" class="hidden mt-3 text-red-400 text-xs flex items-center gap-1.5">
+                            <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            <span id="express-error-text">Formato de dirección IP no válido</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Express Output Section -->
+                <div id="express-result-wrapper" class="hidden grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Basic Information Card -->
+                    <div class="lg:col-span-1 bg-slate-900 border border-slate-800 rounded-2xl p-5 flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-bold text-white text-lg">Resumen General</h3>
+                                <span id="express-type-badge" class="px-2.5 py-0.5 rounded text-xs font-bold uppercase tracking-wider">IPv4</span>
+                            </div>
+                            <div class="space-y-4 text-sm">
+                                <div class="border-b border-slate-800/60 pb-3">
+                                    <div class="text-xs text-slate-500 uppercase tracking-wider mb-1">Dirección Original</div>
+                                    <div id="exp-res-original" class="mono text-white text-sm font-semibold truncate break-all"></div>
+                                </div>
+                                <div class="border-b border-slate-800/60 pb-3">
+                                    <div class="text-xs text-slate-500 uppercase tracking-wider mb-1">Máscara / Prefijo CIDR</div>
+                                    <div id="exp-res-mask" class="mono text-white text-sm font-semibold"></div>
+                                </div>
+                                <div class="border-b border-slate-800/60 pb-3">
+                                    <div class="text-xs text-slate-500 uppercase tracking-wider mb-1">Clase o Tipo de Red</div>
+                                    <div id="exp-res-class" class="text-slate-200 text-sm font-semibold"></div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-500 uppercase tracking-wider mb-1">Ámbito de Uso</div>
+                                    <div id="exp-res-scope" class="text-slate-200 text-sm font-semibold"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="pt-4 border-t border-slate-800 mt-4">
+                            <button id="exp-btn-action" class="w-full bg-slate-800 hover:bg-slate-700 text-indigo-400 font-semibold py-2 px-4 rounded-xl text-xs transition-colors border border-slate-700/60">
+                                Gestionar en Calculadora Avanzada
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Technical Parameters Card -->
+                    <div class="lg:col-span-2 bg-slate-900 border border-slate-800 rounded-2xl p-5">
+                        <h3 class="font-bold text-white text-lg mb-4">Parámetros de Direccionamiento</h3>
+                        
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <!-- IP de Red -->
+                            <div class="bg-slate-950/50 p-3 rounded-xl border border-slate-800/80">
+                                <span class="text-xs text-slate-500 block mb-0.5">Dirección de Red</span>
+                                <span id="exp-tech-net" class="mono text-white text-sm font-semibold"></span>
+                            </div>
+                            <!-- Máscara de Red (o Equivalente Wildcard para v6) -->
+                            <div class="bg-slate-950/50 p-3 rounded-xl border border-slate-800/80">
+                                <span id="exp-tech-lbl-mask" class="text-xs text-slate-500 block mb-0.5">Máscara de Red</span>
+                                <span id="exp-tech-mask" class="mono text-white text-sm font-semibold"></span>
+                            </div>
+                            <!-- Primera Dirección de Host -->
+                            <div class="bg-slate-950/50 p-3 rounded-xl border border-slate-800/80">
+                                <span class="text-xs text-slate-500 block mb-0.5">Primer IP Útil</span>
+                                <span id="exp-tech-first" class="mono text-emerald-400 text-sm font-semibold"></span>
+                            </div>
+                            <!-- Última Dirección de Host -->
+                            <div class="bg-slate-950/50 p-3 rounded-xl border border-slate-800/80">
+                                <span class="text-xs text-slate-500 block mb-0.5">Último IP Útil</span>
+                                <span id="exp-tech-last" class="mono text-emerald-400 text-sm font-semibold"></span>
+                            </div>
+                            <!-- Dirección de Broadcast (sólo v4) -->
+                            <div id="exp-tech-broadcast-box" class="bg-slate-950/50 p-3 rounded-xl border border-slate-800/80">
+                                <span class="text-xs text-slate-500 block mb-0.5">Dirección de Broadcast</span>
+                                <span id="exp-tech-broadcast" class="mono text-red-400 text-sm font-semibold"></span>
+                            </div>
+                            <!-- Total de Hosts de Red -->
+                            <div class="bg-slate-950/50 p-3 rounded-xl border border-slate-800/80">
+                                <span class="text-xs text-slate-500 block mb-0.5">Capacidad del Segmento (IPs Útiles)</span>
+                                <span id="exp-tech-hosts" class="mono text-white text-sm font-semibold"></span>
+                            </div>
+                        </div>
+
+                        <!-- Binary Visual representation -->
+                        <div class="mt-4 pt-4 border-t border-slate-800">
+                            <span class="text-xs text-slate-500 block mb-2">Representación Binaria / Expansión Completa</span>
+                            <div class="bg-slate-950 rounded-xl p-3 border border-slate-800 overflow-x-auto">
+                                <span id="exp-tech-binary" class="mono text-xs text-indigo-300 break-all select-all whitespace-pre-line"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- VISTA: CALCULADORA ESTÁNDAR IPV4 -->
+            <!-- ========================================== -->
+            <div id="content-ipv4-std" class="tab-pane hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Form Control Sidebar -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 h-fit">
+                        <h3 class="text-base font-bold text-white mb-4">Configurar Segmento IPv4</h3>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-xs font-medium text-slate-400 mb-1.5" for="v4std-ip">Dirección IP Host o Red</label>
+                                <input type="text" id="v4std-ip" value="192.168.1.1" oninput="calculateIPv4Std()" class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl p-3 text-white font-mono text-sm outline-none transition-all">
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-3">
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-400 mb-1.5" for="v4std-cidr">Prefijo CIDR</label>
+                                    <select id="v4std-cidr" onchange="updateIPv4StdCidr()" class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl p-3 text-white font-mono text-sm outline-none transition-all">
+                                        <!-- Generado por JS -->
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-medium text-slate-400 mb-1.5" for="v4std-mask">Máscara Decimal</label>
+                                    <select id="v4std-mask" onchange="updateIPv4StdMask()" class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl p-3 text-white font-mono text-xs outline-none transition-all">
+                                        <!-- Generado por JS -->
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Info Box -->
+                            <div class="bg-slate-950/60 rounded-xl p-3 border border-slate-800/80 text-xs text-slate-400 space-y-2">
+                                <div class="font-semibold text-indigo-400">Guía de Máscaras Comunes</div>
+                                <div class="flex justify-between"><span>LAN Pequeña / Hogar</span><span class="mono">/24</span></div>
+                                <div class="flex justify-between"><span>Segmentos Enlaces WAN</span><span class="mono">/30</span></div>
+                                <div class="flex justify-between"><span>Interfaces Point-to-Point</span><span class="mono">/31</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Output Results Main Grid -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                            <h3 class="font-bold text-white text-lg mb-4">Resultados de Subneteo IPv4</h3>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-xl flex items-center justify-between">
+                                    <div>
+                                        <span class="text-xs text-slate-500 block">Dirección de Red</span>
+                                        <span id="v4std-res-net" class="mono text-white font-semibold"></span>
+                                    </div>
+                                    <button onclick="copyToClipboard('v4std-res-net')" class="p-1.5 hover:bg-slate-800 rounded text-slate-400 hover:text-white" title="Copiar IP"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></button>
+                                </div>
+                                <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-xl flex items-center justify-between">
+                                    <div>
+                                        <span class="text-xs text-slate-500 block">Dirección de Broadcast</span>
+                                        <span id="v4std-res-broad" class="mono text-red-400 font-semibold"></span>
+                                    </div>
+                                    <button onclick="copyToClipboard('v4std-res-broad')" class="p-1.5 hover:bg-slate-800 rounded text-slate-400 hover:text-white" title="Copiar IP"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></button>
+                                </div>
+                                <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-xl flex items-center justify-between">
+                                    <div>
+                                        <span class="text-xs text-slate-500 block">Primer Host Útil</span>
+                                        <span id="v4std-res-first" class="mono text-emerald-400 font-semibold"></span>
+                                    </div>
+                                    <button onclick="copyToClipboard('v4std-res-first')" class="p-1.5 hover:bg-slate-800 rounded text-slate-400 hover:text-white" title="Copiar IP"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></button>
+                                </div>
+                                <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-xl flex items-center justify-between">
+                                    <div>
+                                        <span class="text-xs text-slate-500 block">Último Host Útil</span>
+                                        <span id="v4std-res-last" class="mono text-emerald-400 font-semibold"></span>
+                                    </div>
+                                    <button onclick="copyToClipboard('v4std-res-last')" class="p-1.5 hover:bg-slate-800 rounded text-slate-400 hover:text-white" title="Copiar IP"><svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2"/></svg></button>
+                                </div>
+                                <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-xl">
+                                    <span class="text-xs text-slate-500 block">Máscara de Comodín (Wildcard)</span>
+                                    <span id="v4std-res-wild" class="mono text-indigo-300 font-semibold"></span>
+                                </div>
+                                <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-xl">
+                                    <span class="text-xs text-slate-500 block">Cantidad total de Hosts Usables</span>
+                                    <span id="v4std-res-hosts" class="mono text-white font-semibold"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Binary Visual Analysis -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                            <h3 class="font-bold text-white text-lg mb-4">Desglose Binario IP/Máscara</h3>
+                            <div class="space-y-4 font-mono text-xs sm:text-sm">
+                                <div>
+                                    <div class="text-slate-500 mb-1">Dirección IP Host (Binario)</div>
+                                    <div id="v4std-bin-ip" class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-indigo-300 select-all"></div>
+                                </div>
+                                <div>
+                                    <div class="text-slate-500 mb-1">Máscara de Subred (Binario)</div>
+                                    <div id="v4std-bin-mask" class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-slate-300 select-all"></div>
+                                </div>
+                                <div>
+                                    <div class="text-slate-500 mb-1">Dirección de Red (Binario)</div>
+                                    <div id="v4std-bin-net" class="bg-slate-950 p-2.5 rounded-lg border border-slate-800 text-emerald-400 select-all"></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- VISTA: CALCULADORA VLSM IPV4 -->
+            <!-- ========================================== -->
+            <div id="content-ipv4-vlsm" class="tab-pane hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Left Control: Red Base y Configuración -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 h-fit space-y-4">
+                        <h3 class="text-base font-bold text-white">Configuración VLSM</h3>
+                        
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1.5" for="v4vlsm-base">Red Base IPv4 de Partida</label>
+                            <input type="text" id="v4vlsm-base" value="192.168.1.0/24" class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl p-3 text-white font-mono text-sm outline-none transition-all">
+                            <span class="text-slate-500 text-[10px] mt-1 block">Debe contener la IP y máscara base CIDR (Ej: /24).</span>
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="block text-xs font-medium text-slate-400">Requerimiento de Hosts</label>
+                                <button onclick="addV4VlsmRow()" class="text-xs bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 hover:text-indigo-300 font-semibold py-1 px-2.5 rounded border border-indigo-500/20 flex items-center gap-1 transition-colors">
+                                    + Añadir Fila
+                                </button>
+                            </div>
+                            
+                            <!-- Dynamic Table Host Requirements -->
+                            <div id="vlsm-rows-container" class="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                                <!-- Filas dinámicas inyectadas por JS -->
+                            </div>
+                        </div>
+
+                        <button onclick="calculateV4Vlsm()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-indigo-600/20 active:scale-95 transition-all text-sm flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+                            Calcular Subredes VLSM
+                        </button>
+                    </div>
+
+                    <!-- Right Panel: Tabla de Resultados -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <div id="v4vlsm-warning" class="hidden bg-red-950/40 border border-red-800/60 p-4 rounded-xl flex items-start gap-3">
+                            <svg class="w-5 h-5 text-red-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            <div>
+                                <h4 class="text-sm font-bold text-red-200">¡Capacidad de Red Excedida!</h4>
+                                <p class="text-xs text-red-400/90 mt-0.5" id="v4vlsm-warning-text">El total de hosts requeridos excede la capacidad total de la red principal elegida. Por favor, amplía la red base o ajusta el diseño.</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 overflow-hidden">
+                            <div class="flex items-center justify-between mb-4">
+                                <h3 class="font-bold text-white text-lg">Distribución de Subredes VLSM</h3>
+                                <div class="text-xs text-slate-400 flex items-center gap-1.5 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
+                                    <span>Asignación Usada:</span>
+                                    <span id="vlsm-utilization-badge" class="font-bold text-white">0%</span>
+                                </div>
+                            </div>
+
+                            <div class="overflow-x-auto -mx-6">
+                                <table class="w-full text-left border-collapse text-xs md:text-sm">
+                                    <thead>
+                                        <tr class="bg-slate-950 border-y border-slate-800 text-slate-400 uppercase tracking-wider">
+                                            <th class="py-3 px-4 font-semibold">Subred</th>
+                                            <th class="py-3 px-2 font-semibold">Requeridos</th>
+                                            <th class="py-3 px-2 font-semibold">Reservados</th>
+                                            <th class="py-3 px-4 font-semibold">Prefijo / Máscara</th>
+                                            <th class="py-3 px-4 font-semibold">Dir. Red</th>
+                                            <th class="py-3 px-4 font-semibold">Primer IP Útil</th>
+                                            <th class="py-3 px-4 font-semibold">Último IP Útil</th>
+                                            <th class="py-3 px-4 font-semibold">Broadcast</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="vlsm-result-tbody" class="divide-y divide-slate-800/60 text-slate-300">
+                                        <tr>
+                                            <td colspan="8" class="text-center py-8 text-slate-500">Configura tus host y pulsa "Calcular Subredes VLSM" para visualizar los segmentos.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- VISTA: CALCULADORA ESTÁNDAR IPV6 -->
+            <!-- ========================================== -->
+            <div id="content-ipv6-std" class="tab-pane hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    <!-- Form Control Panel -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 h-fit space-y-4">
+                        <h3 class="text-base font-bold text-white">Configurar Prefijo IPv6</h3>
+                        
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1.5" for="v6std-ip">Dirección IPv6 (Host o Red)</label>
+                            <input type="text" id="v6std-ip" value="2001:db8:acad::1" oninput="calculateIPv6Std()" class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl p-3 text-white font-mono text-sm outline-none transition-all">
+                        </div>
+
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1.5" for="v6std-cidr">Longitud del Prefijo (CIDR)</label>
+                            <div class="flex items-center gap-3">
+                                <input type="range" id="v6std-cidr" min="0" max="128" value="64" oninput="updateIPv6StdRangeSlider(this.value)" class="w-full accent-indigo-500 bg-slate-950">
+                                <span id="v6std-cidr-val" class="mono font-bold bg-slate-950 border border-slate-700 px-3 py-1.5 rounded-lg text-indigo-400 text-sm">/64</span>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-950/60 rounded-xl p-3 border border-slate-800/80 text-xs text-slate-400 space-y-2">
+                            <div class="font-semibold text-indigo-400">Longitudes Estándar de Prefijo IPv6</div>
+                            <div class="flex justify-between"><span>Prefijo del ISP</span><span class="mono">/32</span></div>
+                            <div class="flex justify-between"><span>Asignación del Sitio</span><span class="mono">/48</span></div>
+                            <div class="flex justify-between"><span>Segmento Local LAN</span><span class="mono">/64</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Right Column: Results & Visual Breakdown -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <!-- Result Panel -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                            <h3 class="font-bold text-white text-lg mb-4">Información del Prefijo IPv6</h3>
+                            
+                            <div class="space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-xl">
+                                        <span class="text-xs text-slate-500 block">Formato Comprimido</span>
+                                        <span id="v6std-res-compressed" class="mono text-white font-semibold truncate block"></span>
+                                    </div>
+                                    <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-xl">
+                                        <span class="text-xs text-slate-500 block">Formato Expandido</span>
+                                        <span id="v6std-res-expanded" class="mono text-indigo-300 font-semibold truncate block"></span>
+                                    </div>
+                                    <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-xl">
+                                        <span class="text-xs text-slate-500 block">Prefijo de Red</span>
+                                        <span id="v6std-res-prefix" class="mono text-white font-semibold truncate block"></span>
+                                    </div>
+                                    <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-xl">
+                                        <span class="text-xs text-slate-500 block">Tipo de Dirección</span>
+                                        <span id="v6std-res-type" class="text-emerald-400 font-semibold truncate block"></span>
+                                    </div>
+                                </div>
+
+                                <div class="p-4 bg-slate-950 border border-slate-800/80 rounded-xl">
+                                    <span class="text-xs text-slate-500 block mb-1">Rango de Direcciones Usables</span>
+                                    <div class="flex flex-col sm:flex-row justify-between text-xs sm:text-sm font-mono space-y-1 sm:space-y-0">
+                                        <div class="text-emerald-400"><span class="text-slate-500 font-sans">Desde: </span><span id="v6std-res-range-start"></span></div>
+                                        <div class="text-red-400"><span class="text-slate-500 font-sans">Hasta: </span><span id="v6std-res-range-end"></span></div>
+                                    </div>
+                                </div>
+
+                                <div class="p-3 bg-slate-950 border border-slate-800/80 rounded-xl flex items-center justify-between">
+                                    <div>
+                                        <span class="text-xs text-slate-500 block">Total de Direcciones Disponibles en la Subred</span>
+                                        <span id="v6std-res-total" class="mono text-white font-semibold text-sm"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Visión Visual de Partición IPv6 -->
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6">
+                            <h3 class="font-bold text-white text-lg mb-4">Anatomía Visual de la Dirección IPv6</h3>
+                            
+                            <div class="space-y-6">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-2 text-center text-xs font-mono">
+                                    <div class="p-3 rounded-lg border border-cyan-500/20 bg-cyan-500/10 text-cyan-300">
+                                        <span class="block font-bold mb-1">Prefijo de Enrutamiento</span>
+                                        <span class="block font-sans text-[10px] text-cyan-400/80">Red Global (0 - 48 bits)</span>
+                                        <span id="v6std-anat-global" class="text-sm mt-1 block font-semibold"></span>
+                                    </div>
+                                    <div class="p-3 rounded-lg border border-purple-500/20 bg-purple-500/10 text-purple-300">
+                                        <span class="block font-bold mb-1">Subnet ID</span>
+                                        <span class="block font-sans text-[10px] text-purple-400/80">Identificador Red (48 - 64 bits)</span>
+                                        <span id="v6std-anat-subnet" class="text-sm mt-1 block font-semibold"></span>
+                                    </div>
+                                    <div class="p-3 rounded-lg border border-amber-500/20 bg-amber-500/10 text-amber-300">
+                                        <span class="block font-bold mb-1">Interface ID</span>
+                                        <span class="block font-sans text-[10px] text-amber-400/80">Host / Interfaz (64 - 128 bits)</span>
+                                        <span id="v6std-anat-interface" class="text-sm mt-1 block font-semibold"></span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- VISTA: SUBREDES / VLSM IPV6 -->
+            <!-- ========================================== -->
+            <div id="content-ipv6-vlsm" class="tab-pane hidden space-y-6">
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                    
+                    <!-- Form Control: IPv6 Base -->
+                    <div class="bg-slate-900 border border-slate-800 rounded-2xl p-5 h-fit space-y-4">
+                        <h3 class="text-base font-bold text-white">Segmentador IPv6</h3>
+                        
+                        <div>
+                            <label class="block text-xs font-medium text-slate-400 mb-1.5" for="v6vlsm-base">Red Principal Base (Ej: /48 o /56)</label>
+                            <input type="text" id="v6vlsm-base" value="2001:db8:acad::/48" class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl p-3 text-white font-mono text-sm outline-none transition-all">
+                        </div>
+
+                        <div>
+                            <div class="flex items-center justify-between mb-2">
+                                <label class="block text-xs font-medium text-slate-400">Prefijos de Subred a Asignar</label>
+                                <button onclick="addV6VlsmRow()" class="text-xs bg-indigo-600/20 hover:bg-indigo-600/30 text-indigo-400 hover:text-indigo-300 font-semibold py-1 px-2.5 rounded border border-indigo-500/20 flex items-center gap-1 transition-colors">
+                                    + Añadir Fila
+                                </button>
+                            </div>
+
+                            <!-- List of wanted subnets v6 -->
+                            <div id="v6vlsm-rows-container" class="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                                <!-- Filas de subredes inyectadas por JS -->
+                            </div>
+                        </div>
+
+                        <button onclick="calculateV6Vlsm()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-4 rounded-xl shadow-lg shadow-indigo-600/20 active:scale-95 transition-all text-sm flex items-center justify-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"/></svg>
+                            Calcular Subredes IPv6
+                        </button>
+                    </div>
+
+                    <!-- Right Column: Table Results -->
+                    <div class="lg:col-span-2 space-y-6">
+                        <div id="v6vlsm-warning" class="hidden bg-red-950/40 border border-red-800/60 p-4 rounded-xl flex items-start gap-3">
+                            <svg class="w-5 h-5 text-red-400 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            <div>
+                                <h4 class="text-sm font-bold text-red-200">¡Direcciones de Red Insuficientes!</h4>
+                                <p class="text-xs text-red-400/90 mt-0.5" id="v6vlsm-warning-text">La red base suministrada es demasiado pequeña para contener el número de subredes requeridas con esos prefijos.</p>
+                            </div>
+                        </div>
+
+                        <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 overflow-hidden">
+                            <h3 class="font-bold text-white text-lg mb-4">Segmentos IPv6 Asignados</h3>
+                            
+                            <div class="overflow-x-auto -mx-6">
+                                <table class="w-full text-left border-collapse text-xs md:text-sm">
+                                    <thead>
+                                        <tr class="bg-slate-950 border-y border-slate-800 text-slate-400 uppercase tracking-wider">
+                                            <th class="py-3 px-4 font-semibold">Subred</th>
+                                            <th class="py-3 px-4 font-semibold">Tamaño Asignado</th>
+                                            <th class="py-3 px-4 font-semibold">Prefijo de Red IPv6</th>
+                                            <th class="py-3 px-4 font-semibold">Rango de Direcciones Usables</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="v6vlsm-result-tbody" class="divide-y divide-slate-800/60 text-slate-300">
+                                        <tr>
+                                            <td colspan="4" class="text-center py-8 text-slate-500">Agrega prefijos y pulsa "Calcular Subredes IPv6" para segmentar el bloque.</td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- VISTA: CONVERSOR IP -->
+            <!-- ========================================== -->
+            <div id="content-converter" class="tab-pane hidden space-y-6">
+                <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 max-w-4xl mx-auto">
+                    <h2 class="text-xl font-bold text-white mb-2">Conversor Rápido de Formatos</h2>
+                    <p class="text-xs text-slate-400 mb-6">Convierte instantáneamente direcciones IPv4 e IPv6 a diferentes representaciones computacionales.</p>
+                    
+                    <div class="space-y-6">
+                        <!-- Sección IPv4 Conversion -->
+                        <div class="p-4 bg-slate-950/60 border border-slate-800 rounded-xl space-y-4">
+                            <span class="text-xs font-bold text-emerald-400 uppercase tracking-wider block">Conversor IPv4</span>
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                                <div class="md:col-span-1">
+                                    <label class="block text-[11px] text-slate-500 mb-1">IPv4 Estándar</label>
+                                    <input type="text" id="conv-v4-std" value="192.168.1.1" oninput="convertIPv4('std')" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white font-mono outline-none">
+                                </div>
+                                <div class="md:col-span-1">
+                                    <label class="block text-[11px] text-slate-500 mb-1">Entero (Decimal)</label>
+                                    <input type="text" id="conv-v4-int" value="3232235777" oninput="convertIPv4('int')" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white font-mono outline-none">
+                                </div>
+                                <div class="md:col-span-1">
+                                    <label class="block text-[11px] text-slate-500 mb-1">Hexadecimal</label>
+                                    <input type="text" id="conv-v4-hex" value="c0a80101" oninput="convertIPv4('hex')" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-sm text-white font-mono outline-none">
+                                </div>
+                                <div class="md:col-span-1">
+                                    <label class="block text-[11px] text-slate-500 mb-1">Binario</label>
+                                    <input type="text" id="conv-v4-bin" value="11000000101010000000000100000001" oninput="convertIPv4('bin')" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2 text-xs text-white font-mono outline-none">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Sección IPv6 Conversion -->
+                        <div class="p-4 bg-slate-950/60 border border-slate-800 rounded-xl space-y-4">
+                            <span class="text-xs font-bold text-violet-400 uppercase tracking-wider block">Conversor IPv6</span>
+                            <div class="grid grid-cols-1 gap-4">
+                                <div>
+                                    <label class="block text-[11px] text-slate-500 mb-1">Dirección IPv6 (Comprimida o Expandida)</label>
+                                    <input type="text" id="conv-v6-std" value="2001:db8::1" oninput="convertIPv6('std')" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-white font-mono outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] text-slate-500 mb-1">Entero Gigante (Decimal 128-bits)</label>
+                                    <input type="text" id="conv-v6-int" value="42540766411282592856903984551628177409" oninput="convertIPv6('int')" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-sm text-white font-mono outline-none">
+                                </div>
+                                <div>
+                                    <label class="block text-[11px] text-slate-500 mb-1">Binario Completo (128 bits)</label>
+                                    <textarea id="conv-v6-bin" rows="3" oninput="convertIPv6('bin')" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-xs text-white font-mono outline-none resize-none"></textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="border-t border-slate-800 bg-slate-950 py-6 mt-12 text-center text-xs text-slate-500">
+        <div class="max-w-7xl mx-auto px-4">
+            <p>© 2026 IP NET-CALC. Diseñado para Administradores de Redes y Estudiantes de Telecomunicaciones.</p>
+            <p class="mt-1">Ejecutable de forma local de manera offline sin consumo de datos externos.</p>
+        </div>
+    </footer>
+
+    <!-- Scripts & Lógica de Negocio de Direccionamiento IP -->
+    <script>
+        // --- BASE DE DATOS Y ESTADOS GLOBALES ---
+        // Filas VLSM por defecto para IPv4 (4 o 5 casillas listas de ejemplo)
+        let v4VlsmRows = [
+            { id: 1, name: "Sistemas & TI", hosts: 120 },
+            { id: 2, name: "Administración", hosts: 50 },
+            { id: 3, name: "Ventas & Clientes", hosts: 25 },
+            { id: 4, name: "TI Soporte", hosts: 12 },
+            { id: 5, name: "Red Enlaces WAN", hosts: 2 }
+        ];
+
+        // Filas Subredes IPv6 por defecto
+        let v6VlsmRows = [
+            { id: 1, name: "Sede Central LAN", prefix: 64 },
+            { id: 2, name: "Sucursal Norte LAN", prefix: 64 },
+            { id: 3, name: "Servicios Cloud", prefix: 56 },
+            { id: 4, name: "Enlaces WAN v6", prefix: 126 }
+        ];
+
+        // Inicialización al cargar la página
+        window.onload = function() {
+            populateIPv4Dropdowns();
+            renderV4VlsmRows();
+            renderV6VlsmRows();
+            
+            // Cálculos iniciales por defecto para evitar pantallas vacías
+            calculateIPv4Std();
+            calculateIPv6Std();
+            calculateV4Vlsm();
+            calculateV6Vlsm();
+        };
+
+        // --- SISTEMA DE PESTAÑAS (TAB SYSTEM) ---
+        function switchTab(tabId) {
+            // Desactivar todas las pestañas
+            document.querySelectorAll('#main-tabs button').forEach(btn => {
+                btn.className = "px-4 py-2.5 font-medium text-sm rounded-t-lg transition-all duration-200 border-b-2 text-slate-400 border-transparent hover:text-slate-300 hover:border-slate-700 flex items-center gap-2 whitespace-nowrap";
+            });
+            // Ocultar todos los paneles de contenido
+            document.querySelectorAll('.tab-pane').forEach(panel => {
+                panel.classList.add('hidden');
+                panel.classList.remove('block');
+            });
+
+            // Activar la seleccionada
+            const targetBtn = document.getElementById(`tab-${tabId}`);
+            let themeColor = 'text-indigo-400 border-indigo-500';
+            if (tabId.startsWith('ipv4')) themeColor = 'text-emerald-400 border-emerald-500';
+            if (tabId.startsWith('ipv6')) themeColor = 'text-violet-400 border-violet-500';
+            
+            targetBtn.className = `px-4 py-2.5 font-medium text-sm rounded-t-lg transition-all duration-200 border-b-2 ${themeColor} bg-slate-900/50 flex items-center gap-2 whitespace-nowrap`;
+            
+            const targetPane = document.getElementById(`content-${tabId}`);
+            targetPane.classList.remove('hidden');
+            targetPane.classList.add('block');
+        }
+
+        // ==========================================================
+        // UTILIDADES DE PROCESAMIENTO DE IPV4 (CÁLCULO BINARIO)
+        // ==========================================================
+        function ipToInt32(ip) {
+            const parts = ip.split('.');
+            if (parts.length !== 4) return null;
+            let val = 0;
+            for (let i = 0; i < 4; i++) {
+                const octet = parseInt(parts[i], 10);
+                if (isNaN(octet) || octet < 0 || octet > 255) return null;
+                val = (val << 8) + octet;
+            }
+            return val >>> 0;
+        }
+
+        function int32ToIp(val) {
+            return [
+                (val >>> 24) & 255,
+                (val >>> 16) & 255,
+                (val >>> 8) & 255,
+                val & 255
+            ].join('.');
+        }
+
+        function cidrToMaskInt32(cidr) {
+            if (cidr === 0) return 0;
+            return (~((1 << (32 - cidr)) - 1)) >>> 0;
+        }
+
+        function getWildcardInt32(maskInt) {
+            return (~maskInt) >>> 0;
+        }
+
+        function getOctetsBinary(intVal) {
+            const bin = intVal.toString(2).padStart(32, '0');
+            return [
+                bin.substring(0, 8),
+                bin.substring(8, 16),
+                bin.substring(16, 24),
+                bin.substring(24, 32)
+            ].join('.');
+        }
+
+        function getIPv4Class(ipInt) {
+            const firstOctet = ipInt >>> 24;
+            if (firstOctet >= 1 && firstOctet <= 126) return { class: "Clase A", scope: "Pública" };
+            if (firstOctet === 127) return { class: "Loopback (Local)", scope: "Privada / Diagnóstico" };
+            if (firstOctet >= 128 && firstOctet <= 191) {
+                // Verificar si es privada clase B (172.16.0.0 a 172.31.255.255)
+                const secondOctet = (ipInt >>> 16) & 255;
+                if (firstOctet === 172 && secondOctet >= 16 && secondOctet <= 31) {
+                    return { class: "Clase B (Privada)", scope: "Privada de Red Local" };
+                }
+                return { class: "Clase B", scope: "Pública" };
+            }
+            if (firstOctet >= 192 && firstOctet <= 223) {
+                if (firstOctet === 192 && ((ipInt >>> 16) & 255) === 168) {
+                    return { class: "Clase C (Privada)", scope: "Privada de Red Local (Hogar)" };
+                }
+                return { class: "Clase C", scope: "Pública" };
+            }
+            if (firstOctet >= 224 && firstOctet <= 239) return { class: "Clase D (Multicast)", scope: "Multicast Multidifusión" };
+            return { class: "Clase E (Experimental)", scope: "Reservada de Investigación" };
+        }
+
+        // ==========================================================
+        // UTILIDADES DE PROCESAMIENTO DE IPV6 (BIGINT SUPORT)
+        // ==========================================================
+        function parseIPv6ToBigInt(ipStr) {
+            let address = ipStr.trim().toLowerCase();
+            // Limpiar si tiene barra de máscara
+            if (address.includes('/')) {
+                address = address.split('/')[0];
+            }
+            
+            if (address === '::') address = '0:0:0:0:0:0:0:0';
+            else if (address.startsWith('::')) address = '0' + address;
+            else if (address.endsWith('::')) address = address + '0';
+            
+            const parts = address.split('::');
+            if (parts.length > 2) return null; // Formato inválido
+            
+            let left = parts[0] ? parts[0].split(':') : [];
+            let right = parts[1] ? parts[1].split(':') : [];
+            
+            if (parts.length === 2) {
+                const missing = 8 - (left.length + right.length);
+                if (missing < 0) return null;
+                const fill = Array(missing).fill('0');
+                left = left.concat(fill).concat(right);
+            } else {
+                if (left.length !== 8) return null;
+            }
+            
+            let val = 0n;
+            for (let i = 0; i < 8; i++) {
+                const part = left[i];
+                if (!/^[0-9a-f]{1,4}$/.test(part)) return null;
+                val = (val << 16n) + BigInt(parseInt(part, 16));
+            }
+            return val;
+        }
+
+        function bigIntToIPv6Full(val) {
+            let hex = val.toString(16).padStart(32, '0');
+            let parts = [];
+            for (let i = 0; i < 8; i++) {
+                parts.push(hex.substring(i * 4, (i + 1) * 4));
+            }
+            return parts.join(':');
+        }
+
+        function compressIPv6(fullStr) {
+            const blocks = fullStr.split(':').map(b => parseInt(b, 16).toString(16));
+            // Encontrar la secuencia más larga de ceros contiguos
+            let maxZeroLen = 0;
+            let maxZeroIdx = -1;
+            let currZeroLen = 0;
+            let currZeroIdx = -1;
+            
+            for (let i = 0; i < blocks.length; i++) {
+                if (blocks[i] === '0') {
+                    if (currZeroLen === 0) currZeroIdx = i;
+                    currZeroLen++;
+                    if (currZeroLen > maxZeroLen) {
+                        maxZeroLen = currZeroLen;
+                        maxZeroIdx = currZeroIdx;
+                    }
+                } else {
+                    currZeroLen = 0;
+                }
+            }
+            
+            if (maxZeroLen > 1) {
+                const left = blocks.slice(0, maxZeroIdx).join(':');
+                const right = blocks.slice(maxZeroIdx + maxZeroLen).join(':');
+                return `${left}::${right}`;
+            }
+            return blocks.join(':');
+        }
+
+        function getIPv6MaskBigInt(cidr) {
+            if (cidr === 0) return 0n;
+            return ((1n << 128n) - 1n) ^ ((1n << (128n - BigInt(cidr))) - 1n);
+        }
+
+        function getIPv6Type(val) {
+            // Analizar los bits más significativos para clasificar IPv6
+            const high16 = val >> 112n;
+            if (val === 0n) return { type: "Loopback / Desconocida", scope: "Local Host" };
+            if (val === 1n) return { type: "Loopback (::1)", scope: "Reservada Diagnóstico" };
+            if (high16 === 0xfe80n) return { type: "Link-Local", scope: "Canal Local Enlace (No enrutable)" };
+            if ((high16 & 0xfe00n) === 0xfc00n) return { type: "Unique Local Address (ULA)", scope: "Organización Privada Interna" };
+            if ((high16 & 0xff00n) === 0xff00n) return { type: "Multicast IPv6", scope: "Grupo de Red Multidifusión" };
+            if ((high16 & 0xe000n) === 0x2000n) return { type: "Global Unicast (GUA)", scope: "Internet IPv6 Pública" };
+            return { type: "Dirección Reservada", scope: "Asignación Especial" };
+        }
+
+        // ==========================================================
+        // 1. CONTROLADOR DE VISTA: ANALIZADOR EXPRESS
+        // ==========================================================
+        function analyzeExpress() {
+            const rawInput = document.getElementById('express-input').value.trim();
+            const errorBox = document.getElementById('express-error');
+            const resultBox = document.getElementById('express-result-wrapper');
+            
+            errorBox.classList.add('hidden');
+            
+            if (!rawInput) {
+                showExpressError("Por favor, ingresa una dirección IPv4 o IPv6");
+                return;
+            }
+
+            // Detectar versión de IP analizando estructura
+            let ipPart = rawInput;
+            let cidrPart = null;
+
+            if (rawInput.includes('/')) {
+                const split = rawInput.split('/');
+                ipPart = split[0];
+                cidrPart = parseInt(split[1], 10);
+            }
+
+            const isV6 = ipPart.includes(':');
+
+            if (!isV6) {
+                // Es IPv4
+                const ipInt = ipToInt32(ipPart);
+                if (ipInt === null) {
+                    showExpressError("Dirección IPv4 con formato no válido (Ej. Válido: 10.0.0.1)");
+                    return;
+                }
+                const cidr = (cidrPart !== null && !isNaN(cidrPart) && cidrPart >= 0 && cidrPart <= 32) ? cidrPart : 24;
+                
+                // Mostrar datos
+                resultBox.classList.remove('hidden');
+                document.getElementById('express-type-badge').innerText = "IPv4";
+                document.getElementById('express-type-badge').className = "px-2.5 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-emerald-500/10 text-emerald-400 border border-emerald-500/20";
+                
+                const maskInt = cidrToMaskInt32(cidr);
+                const wildcardInt = getWildcardInt32(maskInt);
+                const netInt = (ipInt & maskInt) >>> 0;
+                const broadInt = (netInt | wildcardInt) >>> 0;
+                const infoClass = getIPv4Class(ipInt);
+
+                document.getElementById('exp-res-original').innerText = rawInput;
+                document.getElementById('exp-res-mask').innerText = `${int32ToIp(maskInt)} (/${cidr})`;
+                document.getElementById('exp-res-class').innerText = infoClass.class;
+                document.getElementById('exp-res-scope').innerText = infoClass.scope;
+
+                document.getElementById('exp-tech-net').innerText = int32ToIp(netInt);
+                document.getElementById('exp-tech-lbl-mask').innerText = "Máscara Comodín (Wildcard)";
+                document.getElementById('exp-tech-mask').innerText = int32ToIp(wildcardInt);
+                
+                if (cidr === 32) {
+                    document.getElementById('exp-tech-first').innerText = int32ToIp(ipInt);
+                    document.getElementById('exp-tech-last').innerText = int32ToIp(ipInt);
+                    document.getElementById('exp-tech-hosts').innerText = "1 Host (IP Única)";
+                } else if (cidr === 31) {
+                    document.getElementById('exp-tech-first').innerText = int32ToIp(netInt);
+                    document.getElementById('exp-tech-last').innerText = int32ToIp(broadInt);
+                    document.getElementById('exp-tech-hosts').innerText = "2 Hosts (Punto a Punto)";
+                } else {
+                    document.getElementById('exp-tech-first').innerText = int32ToIp((netInt + 1) >>> 0);
+                    document.getElementById('exp-tech-last').innerText = int32ToIp((broadInt - 1) >>> 0);
+                    document.getElementById('exp-tech-hosts').innerText = `${(broadInt - netInt - 1).toLocaleString()} Hosts`;
+                }
+
+                document.getElementById('exp-tech-broadcast-box').classList.remove('hidden');
+                document.getElementById('exp-tech-broadcast').innerText = int32ToIp(broadInt);
+                
+                // Desglose binario
+                document.getElementById('exp-tech-binary').innerText = 
+                    `IP:   ${getOctetsBinary(ipInt)}\nRed:  ${getOctetsBinary(netInt)}\nMásk: ${getOctetsBinary(maskInt)}`;
+
+                // Botón acción
+                document.getElementById('exp-btn-action').onclick = function() {
+                    document.getElementById('v4std-ip').value = ipPart;
+                    document.getElementById('v4std-cidr').value = cidr;
+                    updateIPv4StdCidr();
+                    switchTab('ipv4-std');
+                };
+
+            } else {
+                // Es IPv6
+                const ipBig = parseIPv6ToBigInt(ipPart);
+                if (ipBig === null) {
+                    showExpressError("Dirección IPv6 con formato no válido o incorrecto.");
+                    return;
+                }
+                const cidr = (cidrPart !== null && !isNaN(cidrPart) && cidrPart >= 0 && cidrPart <= 128) ? cidrPart : 64;
+
+                resultBox.classList.remove('hidden');
+                document.getElementById('express-type-badge').innerText = "IPv6";
+                document.getElementById('express-type-badge').className = "px-2.5 py-0.5 rounded text-xs font-bold uppercase tracking-wider bg-violet-500/10 text-violet-400 border border-violet-500/20";
+
+                const maskBig = getIPv6MaskBigInt(cidr);
+                const netBig = ipBig & maskBig;
+                const endBig = netBig | (~maskBig & ((1n << 128n) - 1n));
+                const v6type = getIPv6Type(ipBig);
+
+                const fullHex = bigIntToIPv6Full(ipBig);
+
+                document.getElementById('exp-res-original').innerText = rawInput;
+                document.getElementById('exp-res-mask').innerText = `Longitud: /${cidr}`;
+                document.getElementById('exp-res-class').innerText = v6type.type;
+                document.getElementById('exp-res-scope').innerText = v6type.scope;
+
+                document.getElementById('exp-tech-net').innerText = `${compressIPv6(bigIntToIPv6Full(netBig))}/${cidr}`;
+                document.getElementById('exp-tech-lbl-mask').innerText = "Máscara Binaria (Hex)";
+                document.getElementById('exp-tech-mask').innerText = compressIPv6(bigIntToIPv6Full(maskBig));
+                
+                document.getElementById('exp-tech-first').innerText = compressIPv6(bigIntToIPv6Full(netBig));
+                document.getElementById('exp-tech-last').innerText = compressIPv6(bigIntToIPv6Full(endBig));
+
+                const totalAddresses = 1n << (128n - BigInt(cidr));
+                document.getElementById('exp-tech-hosts').innerText = totalAddresses > 1000000000n ? `~${Number(totalAddresses).toExponential(3)} direcciones` : `${totalAddresses.toString()} direcciones`;
+
+                document.getElementById('exp-tech-broadcast-box').classList.add('hidden'); // IPv6 no tiene broadcast
+                
+                document.getElementById('exp-tech-binary').innerText = `Expandida: ${fullHex}\nComprimida: ${compressIPv6(fullHex)}`;
+
+                document.getElementById('exp-btn-action').onclick = function() {
+                    document.getElementById('v6std-ip').value = ipPart;
+                    document.getElementById('v6std-cidr').value = cidr;
+                    updateIPv6StdRangeSlider(cidr);
+                    switchTab('ipv6-std');
+                };
+            }
+        }
+
+        function showExpressError(msg) {
+            document.getElementById('express-error-text').innerText = msg;
+            document.getElementById('express-error').classList.remove('hidden');
+            document.getElementById('express-result-wrapper').classList.add('hidden');
+        }
+
+        // ==========================================================
+        // 2. CONTROLADOR DE VISTA: CALCULADORA ESTÁNDAR IPV4
+        // ==========================================================
+        function populateIPv4Dropdowns() {
+            const cidrSelect = document.getElementById('v4std-cidr');
+            const maskSelect = document.getElementById('v4std-mask');
+            
+            cidrSelect.innerHTML = '';
+            maskSelect.innerHTML = '';
+
+            for (let i = 32; i >= 0; i--) {
+                const maskVal = int32ToIp(cidrToMaskInt32(i));
+                
+                // Opción CIDR
+                const optCidr = document.createElement('option');
+                optCidr.value = i;
+                optCidr.innerText = `/${i}`;
+                if (i === 24) optCidr.selected = true;
+                cidrSelect.appendChild(optCidr);
+
+                // Opción Máscara Decimal
+                const optMask = document.createElement('option');
+                optMask.value = i;
+                optMask.innerText = maskVal;
+                if (i === 24) optMask.selected = true;
+                maskSelect.appendChild(optMask);
+            }
+        }
+
+        function updateIPv4StdCidr() {
+            const cidrVal = document.getElementById('v4std-cidr').value;
+            document.getElementById('v4std-mask').value = cidrVal;
+            calculateIPv4Std();
+        }
+
+        function updateIPv4StdMask() {
+            const maskVal = document.getElementById('v4std-mask').value;
+            document.getElementById('v4std-cidr').value = maskVal;
+            calculateIPv4Std();
+        }
+
+        function calculateIPv4Std() {
+            const ipInput = document.getElementById('v4std-ip').value.trim();
+            const cidr = parseInt(document.getElementById('v4std-cidr').value, 10);
+
+            const ipInt = ipToInt32(ipInput);
+            if (ipInt === null) {
+                // Input Inválido
+                return;
+            }
+
+            const maskInt = cidrToMaskInt32(cidr);
+            const wildcardInt = getWildcardInt32(maskInt);
+            const netInt = (ipInt & maskInt) >>> 0;
+            const broadInt = (netInt | wildcardInt) >>> 0;
+
+            document.getElementById('v4std-res-net').innerText = int32ToIp(netInt);
+            document.getElementById('v4std-res-broad').innerText = int32ToIp(broadInt);
+            document.getElementById('v4std-res-wild').innerText = int32ToIp(wildcardInt);
+
+            if (cidr === 32) {
+                document.getElementById('v4std-res-first').innerText = int32ToIp(netInt);
+                document.getElementById('v4std-res-last').innerText = int32ToIp(broadInt);
+                document.getElementById('v4std-res-hosts').innerText = "1 (Solo Host)";
+            } else if (cidr === 31) {
+                document.getElementById('v4std-res-first').innerText = int32ToIp(netInt);
+                document.getElementById('v4std-res-last').innerText = int32ToIp(broadInt);
+                document.getElementById('v4std-res-hosts').innerText = "2 (Punto a Punto)";
+            } else {
+                document.getElementById('v4std-res-first').innerText = int32ToIp((netInt + 1) >>> 0);
+                document.getElementById('v4std-res-last').innerText = int32ToIp((broadInt - 1) >>> 0);
+                document.getElementById('v4std-res-hosts').innerText = (broadInt - netInt - 1).toLocaleString();
+            }
+
+            // Actualización de Binarios
+            document.getElementById('v4std-bin-ip').innerText = getOctetsBinary(ipInt);
+            document.getElementById('v4std-bin-mask').innerText = getOctetsBinary(maskInt);
+            document.getElementById('v4std-bin-net').innerText = getOctetsBinary(netInt);
+        }
+
+        // ==========================================================
+        // 3. CONTROLADOR DE VISTA: CALCULADOR VLSM IPV4
+        // ==========================================================
+        function renderV4VlsmRows() {
+            const container = document.getElementById('vlsm-rows-container');
+            container.innerHTML = '';
+
+            v4VlsmRows.forEach((row, index) => {
+                const div = document.createElement('div');
+                div.className = "flex items-center gap-2 bg-slate-950 p-2 rounded-xl border border-slate-800/80";
+                div.innerHTML = `
+                    <input type="text" value="${row.name}" oninput="updateV4VlsmName(${row.id}, this.value)" class="bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-xs text-white outline-none flex-grow" placeholder="Nombre de red">
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <input type="number" value="${row.hosts}" min="1" oninput="updateV4VlsmHosts(${row.id}, this.value)" class="bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-xs text-white outline-none w-16 text-center font-mono" placeholder="Hosts">
+                        <button onclick="removeV4VlsmRow(${row.id})" class="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors" title="Eliminar subred">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function addV4VlsmRow() {
+            const nextId = v4VlsmRows.length > 0 ? Math.max(...v4VlsmRows.map(r => r.id)) + 1 : 1;
+            v4VlsmRows.push({
+                id: nextId,
+                name: `Subred ${nextId}`,
+                hosts: 10
+            });
+            renderV4VlsmRows();
+            calculateV4Vlsm();
+        }
+
+        function removeV4VlsmRow(id) {
+            v4VlsmRows = v4VlsmRows.filter(r => r.id !== id);
+            renderV4VlsmRows();
+            calculateV4Vlsm();
+        }
+
+        function updateV4VlsmName(id, value) {
+            const row = v4VlsmRows.find(r => r.id === id);
+            if (row) row.name = value;
+        }
+
+        function updateV4VlsmHosts(id, value) {
+            const row = v4VlsmRows.find(r => r.id === id);
+            if (row) {
+                row.hosts = parseInt(value, 10) || 0;
+            }
+        }
+
+        function calculateV4Vlsm() {
+            const baseInput = document.getElementById('v4vlsm-base').value.trim();
+            const warningBox = document.getElementById('v4vlsm-warning');
+            const tbody = document.getElementById('vlsm-result-tbody');
+            
+            warningBox.classList.add('hidden');
+            
+            // Separar IP y CIDR base
+            if (!baseInput.includes('/')) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-red-400">Error: Red base debe contener formato CIDR (Ej: 192.168.1.0/24)</td></tr>`;
+                return;
+            }
+
+            const [baseIp, baseCidrStr] = baseInput.split('/');
+            const baseCidr = parseInt(baseCidrStr, 10);
+            const baseIpInt = ipToInt32(baseIp);
+
+            if (baseIpInt === null || isNaN(baseCidr) || baseCidr < 0 || baseCidr > 32) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-red-400">Error: Dirección o máscara base inválida.</td></tr>`;
+                return;
+            }
+
+            // Clonar y ordenar descendente por cantidad de hosts requerida (requisito estándar VLSM)
+            const sortedSubnets = [...v4VlsmRows]
+                .filter(s => s.hosts > 0)
+                .sort((a, b) => b.hosts - a.hosts);
+
+            if (sortedSubnets.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="text-center py-6 text-slate-500">Agrega subredes válidas con al menos 1 host para calcular.</td></tr>`;
+                return;
+            }
+
+            let currentIp = baseIpInt;
+            const parentNetworkSize = Math.pow(2, 32 - baseCidr);
+            let totalAllocatedSize = 0;
+
+            let html = '';
+
+            for (let i = 0; i < sortedSubnets.length; i++) {
+                const sub = sortedSubnets[i];
+                const reqHosts = sub.hosts;
+                
+                // Tamaño requerido real de bloque: hosts usables + 2 (red y broadcast)
+                // Caso excepcional de point-to-point /31 o /32 si se requiriese, pero VLSM estándar usa overhead de 2
+                let blockSize;
+                let subCidr;
+                
+                if (reqHosts === 1) {
+                    blockSize = 4; // mínimo /30 para alojar red, broadcast y primer host
+                    subCidr = 30;
+                } else {
+                    // Buscar potencia de 2 que sea >= (reqHosts + 2)
+                    let power = Math.ceil(Math.log2(reqHosts + 2));
+                    if (power < 2) power = 2; // mínimo bloque /30 (4 IPs)
+                    blockSize = Math.pow(2, power);
+                    subCidr = 32 - power;
+                }
+
+                totalAllocatedSize += blockSize;
+
+                const subMaskInt = cidrToMaskInt32(subCidr);
+                const subWildInt = getWildcardInt32(subMaskInt);
+                
+                const netInt = currentIp;
+                const broadInt = (netInt | subWildInt) >>> 0;
+                const firstIpInt = (netInt + 1) >>> 0;
+                const lastIpInt = (broadInt - 1) >>> 0;
+
+                // Verificar si nos salimos del bloque general principal
+                const limitExceeded = (currentIp + blockSize - 1) > (baseIpInt + parentNetworkSize - 1);
+
+                if (limitExceeded) {
+                    warningBox.classList.remove('hidden');
+                    document.getElementById('v4vlsm-warning-text').innerText = "¡La asignación excede el espacio direccionable de la red principal! Los últimos segmentos no pudieron asignarse.";
+                    html += `
+                        <tr class="bg-red-950/20 text-red-400">
+                            <td class="py-3 px-4 font-semibold">${sub.name}</td>
+                            <td class="py-3 px-2">${reqHosts}</td>
+                            <td class="py-3 px-2">-</td>
+                            <td class="py-3 px-4 font-bold text-xs">Excedido</td>
+                            <td colspan="4" class="py-3 px-4 text-center font-medium">Sin Direcciones Disponibles</td>
+                        </tr>
+                    `;
+                    continue;
+                }
+
+                html += `
+                    <tr class="hover:bg-slate-800/30">
+                        <td class="py-3 px-4 font-semibold text-slate-200">${sub.name}</td>
+                        <td class="py-3 px-2 font-mono">${reqHosts}</td>
+                        <td class="py-3 px-2 font-mono text-slate-400">${blockSize - 2}</td>
+                        <td class="py-3 px-4 font-mono">
+                            <span class="text-white font-bold">/${subCidr}</span><br>
+                            <span class="text-[10px] text-slate-500">${int32ToIp(subMaskInt)}</span>
+                        </td>
+                        <td class="py-3 px-4 font-mono font-medium">${int32ToIp(netInt)}</td>
+                        <td class="py-3 px-4 font-mono text-emerald-400 font-medium">${int32ToIp(firstIpInt)}</td>
+                        <td class="py-3 px-4 font-mono text-emerald-400 font-medium">${int32ToIp(lastIpInt)}</td>
+                        <td class="py-3 px-4 font-mono text-red-400">${int32ToIp(broadInt)}</td>
+                    </tr>
+                `;
+
+                // Avanzar IP base para siguiente bloque
+                currentIp = (broadInt + 1) >>> 0;
+            }
+
+            tbody.innerHTML = html;
+
+            // Calcular porcentaje utilización de red principal
+            const percentage = Math.min(100, Math.round((totalAllocatedSize / parentNetworkSize) * 100));
+            document.getElementById('vlsm-utilization-badge').innerText = `${percentage}% (${totalAllocatedSize.toLocaleString()} / ${parentNetworkSize.toLocaleString()} IPs)`;
+            if (percentage > 100) {
+                document.getElementById('vlsm-utilization-badge').className = "font-bold text-red-400";
+            } else {
+                document.getElementById('vlsm-utilization-badge').className = "font-bold text-indigo-400";
+            }
+        }
+
+        // ==========================================================
+        // 4. CONTROLADOR DE VISTA: CALCULADORA ESTÁNDAR IPV6
+        // ==========================================================
+        function updateIPv6StdRangeSlider(val) {
+            document.getElementById('v6std-cidr').value = val;
+            document.getElementById('v6std-cidr-val').innerText = `/${val}`;
+            calculateIPv6Std();
+        }
+
+        function calculateIPv6Std() {
+            const ipInput = document.getElementById('v6std-ip').value.trim();
+            const cidr = parseInt(document.getElementById('v6std-cidr').value, 10);
+
+            const ipBig = parseIPv6ToBigInt(ipInput);
+            if (ipBig === null) {
+                return;
+            }
+
+            const fullHex = bigIntToIPv6Full(ipBig);
+            const comp = compressIPv6(fullHex);
+            const maskBig = getIPv6MaskBigInt(cidr);
+            const netBig = ipBig & maskBig;
+            const endBig = netBig | (~maskBig & ((1n << 128n) - 1n));
+            const v6type = getIPv6Type(ipBig);
+
+            document.getElementById('v6std-res-compressed').innerText = `${comp}/${cidr}`;
+            document.getElementById('v6std-res-expanded').innerText = fullHex;
+            document.getElementById('v6std-res-prefix').innerText = `${compressIPv6(bigIntToIPv6Full(netBig))}/${cidr}`;
+            document.getElementById('v6std-res-type').innerText = `${v6type.type} (${v6type.scope})`;
+
+            document.getElementById('v6std-res-range-start').innerText = compressIPv6(bigIntToIPv6Full(netBig));
+            document.getElementById('v6std-res-range-end').innerText = compressIPv6(bigIntToIPv6Full(endBig));
+
+            // Total IPs usables
+            const totalAddresses = 1n << (128n - BigInt(cidr));
+            document.getElementById('v6std-res-total').innerText = totalAddresses > 100000000n ? `~${Number(totalAddresses).toExponential(3)} direcciones totales` : `${totalAddresses.toString()} direcciones`;
+
+            // Anatomía Visual (0-48 bits, 48-64 bits, 64-128 bits)
+            const blocks = fullHex.split(':');
+            
+            // Prefijo Global (Generalmente primeros 3 bloques - 48 bits)
+            document.getElementById('v6std-anat-global').innerText = blocks.slice(0, 3).join(':') + '::';
+            
+            // Subnet ID (Bloque 4 - 16 bits de subredes estándar)
+            document.getElementById('v6std-anat-subnet').innerText = `:${blocks[3]}:`;
+            
+            // Interface ID (Últimos 4 bloques - 64 bits de Host)
+            document.getElementById('v6std-anat-interface').innerText = '::' + blocks.slice(4).join(':');
+        }
+
+        // ==========================================================
+        // 5. CONTROLADOR DE VISTA: SUBREDES VLSM IPV6
+        // ==========================================================
+        function renderV6VlsmRows() {
+            const container = document.getElementById('v6vlsm-rows-container');
+            container.innerHTML = '';
+
+            v6VlsmRows.forEach((row, index) => {
+                const div = document.createElement('div');
+                div.className = "flex items-center gap-2 bg-slate-950 p-2 rounded-xl border border-slate-800/80";
+                div.innerHTML = `
+                    <input type="text" value="${row.name}" oninput="updateV6VlsmName(${row.id}, this.value)" class="bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-xs text-white outline-none flex-grow" placeholder="Nombre subred">
+                    <div class="flex items-center gap-1.5 shrink-0">
+                        <span class="text-xs text-slate-500 font-mono">/</span>
+                        <input type="number" value="${row.prefix}" min="1" max="128" oninput="updateV6VlsmPrefix(${row.id}, this.value)" class="bg-slate-900 border border-slate-700 rounded-lg p-1.5 text-xs text-white outline-none w-14 text-center font-mono" placeholder="Prefijo">
+                        <button onclick="removeV6VlsmRow(${row.id})" class="p-1 text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded transition-colors" title="Eliminar">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function addV6VlsmRow() {
+            const nextId = v6VlsmRows.length > 0 ? Math.max(...v6VlsmRows.map(r => r.id)) + 1 : 1;
+            v6VlsmRows.push({
+                id: nextId,
+                name: `Subred IPv6 ${nextId}`,
+                prefix: 64
+            });
+            renderV6VlsmRows();
+            calculateV6Vlsm();
+        }
+
+        function removeV6VlsmRow(id) {
+            v6VlsmRows = v6VlsmRows.filter(r => r.id !== id);
+            renderV6VlsmRows();
+            calculateV6Vlsm();
+        }
+
+        function updateV6VlsmName(id, value) {
+            const row = v6VlsmRows.find(r => r.id === id);
+            if (row) row.name = value;
+        }
+
+        function updateV6VlsmPrefix(id, value) {
+            const row = v6VlsmRows.find(r => r.id === id);
+            if (row) {
+                row.prefix = Math.min(128, Math.max(0, parseInt(value, 10) || 64));
+            }
+        }
+
+        function calculateV6Vlsm() {
+            const baseInput = document.getElementById('v6vlsm-base').value.trim();
+            const warningBox = document.getElementById('v6vlsm-warning');
+            const tbody = document.getElementById('v6vlsm-result-tbody');
+
+            warningBox.classList.add('hidden');
+
+            if (!baseInput.includes('/')) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-red-400">Error: Prefijo base IPv6 debe contener formato CIDR (Ej: 2001:db8::/48)</td></tr>`;
+                return;
+            }
+
+            const [baseIp, baseCidrStr] = baseInput.split('/');
+            const baseCidr = parseInt(baseCidrStr, 10);
+            const baseIpBig = parseIPv6ToBigInt(baseIp);
+
+            if (baseIpBig === null || isNaN(baseCidr) || baseCidr < 0 || baseCidr > 128) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-red-400">Error: Dirección o máscara IPv6 base inválida.</td></tr>`;
+                return;
+            }
+
+            // Ordenar por tamaño de prefijo menor a mayor (prefijos más grandes en tamaño de red, p.ej. /56 antes que /64)
+            const sortedSubnets = [...v6VlsmRows].sort((a, b) => a.prefix - b.prefix);
+
+            if (sortedSubnets.length === 0) {
+                tbody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-slate-500">Agrega prefijos requeridos para calcular.</td></tr>`;
+                return;
+            }
+
+            let currentIp = baseIpBig;
+            let html = '';
+
+            for (let i = 0; i < sortedSubnets.length; i++) {
+                const sub = sortedSubnets[i];
+                const subCidr = sub.prefix;
+
+                if (subCidr < baseCidr) {
+                    tbody.innerHTML = `<tr><td colspan="4" class="text-center py-6 text-red-400">Error: No se puede asignar un prefijo /${subCidr} menor que el prefijo de la red base /${baseCidr}.</td></tr>`;
+                    return;
+                }
+
+                // Alinear bloque actual a la frontera de su prefijo
+                const blockSize = 1n << (128n - BigInt(subCidr));
+                
+                // Si la dirección no está alineada al bloque, alinearla
+                const alignmentMask = ((1n << 128n) - 1n) << (128n - BigInt(subCidr));
+                if ((currentIp & ~alignmentMask) !== 0n) {
+                    currentIp = (currentIp & alignmentMask) + blockSize;
+                }
+
+                const netBig = currentIp;
+                const endBig = netBig + blockSize - 1n;
+
+                // Validar si excede el tamaño del bloque principal
+                const parentBlockSize = 1n << (128n - BigInt(baseCidr));
+                const limitExceeded = (endBig > (baseIpBig + parentBlockSize - 1n));
+
+                if (limitExceeded) {
+                    warningBox.classList.remove('hidden');
+                    html += `
+                        <tr class="bg-red-950/20 text-red-400">
+                            <td class="py-3 px-4 font-semibold">${sub.name}</td>
+                            <td class="py-3 px-4">/${subCidr}</td>
+                            <td colspan="2" class="py-3 px-4 text-center font-medium">Asignación Excede Espacio Direccionable Principal</td>
+                        </tr>
+                    `;
+                    continue;
+                }
+
+                html += `
+                    <tr class="hover:bg-slate-800/30">
+                        <td class="py-3 px-4 font-semibold text-slate-200">${sub.name}</td>
+                        <td class="py-3 px-4 font-mono text-slate-400">/${subCidr} (${blockSize > 1000000n ? `~${Number(blockSize).toExponential(2)}` : blockSize.toString()} IPs)</td>
+                        <td class="py-3 px-4 font-mono text-white font-medium">${compressIPv6(bigIntToIPv6Full(netBig))}/${subCidr}</td>
+                        <td class="py-3 px-4 font-mono text-slate-300">
+                            <span class="text-[10px] text-slate-500">Desde:</span> <span class="text-emerald-400">${compressIPv6(bigIntToIPv6Full(netBig))}</span><br>
+                            <span class="text-[10px] text-slate-500">Hasta:</span> <span class="text-violet-400">${compressIPv6(bigIntToIPv6Full(endBig))}</span>
+                        </td>
+                    </tr>
+                `;
+
+                currentIp = endBig + 1n;
+            }
+
+            tbody.innerHTML = html;
+        }
+
+        // ==========================================================
+        // 6. CONTROLADOR DE VISTA: CONVERSOR IP
+        // ==========================================================
+        function convertIPv4(source) {
+            const stdInput = document.getElementById('conv-v4-std');
+            const intInput = document.getElementById('conv-v4-int');
+            const hexInput = document.getElementById('conv-v4-hex');
+            const binInput = document.getElementById('conv-v4-bin');
+
+            let ipInt = null;
+
+            if (source === 'std') {
+                ipInt = ipToInt32(stdInput.value.trim());
+            } else if (source === 'int') {
+                const val = parseInt(intInput.value.trim(), 10);
+                if (!isNaN(val) && val >= 0 && val <= 4294967295) ipInt = val;
+            } else if (source === 'hex') {
+                const val = parseInt(hexInput.value.trim(), 16);
+                if (!isNaN(val) && val >= 0 && val <= 4294967295) ipInt = val;
+            } else if (source === 'bin') {
+                const cleanBin = binInput.value.replace(/\./g, '').trim();
+                const val = parseInt(cleanBin, 2);
+                if (!isNaN(val) && val >= 0 && val <= 4294967295) ipInt = val;
+            }
+
+            if (ipInt !== null) {
+                if (source !== 'std') stdInput.value = int32ToIp(ipInt);
+                if (source !== 'int') intInput.value = ipInt.toString(10);
+                if (source !== 'hex') hexInput.value = ipInt.toString(16).padStart(8, '0');
+                if (source !== 'bin') binInput.value = getOctetsBinary(ipInt);
+            }
+        }
+
+        function convertIPv6(source) {
+            const stdInput = document.getElementById('conv-v6-std');
+            const intInput = document.getElementById('conv-v6-int');
+            const binInput = document.getElementById('conv-v6-bin');
+
+            let ipBig = null;
+
+            try {
+                if (source === 'std') {
+                    ipBig = parseIPv6ToBigInt(stdInput.value.trim());
+                } else if (source === 'int') {
+                    const parsed = BigInt(intInput.value.trim());
+                    if (parsed >= 0n && parsed <= (1n << 128n) - 1n) ipBig = parsed;
+                } else if (source === 'bin') {
+                    const cleanBin = binInput.value.replace(/[^01]/g, '');
+                    if (cleanBin.length <= 128) {
+                        ipBig = BigInt('0b' + cleanBin);
+                    }
+                }
+            } catch (e) {
+                // Manejar error de parseo BigInt de forma silenciosa
+            }
+
+            if (ipBig !== null) {
+                if (source !== 'std') stdInput.value = compressIPv6(bigIntToIPv6Full(ipBig));
+                if (source !== 'int') intInput.value = ipBig.toString(10);
+                if (source !== 'bin') {
+                    const binStr = ipBig.toString(2).padStart(128, '0');
+                    // Separar por bloques de 16 bits para mejor visualización
+                    let formattedBin = '';
+                    for (let i = 0; i < 8; i++) {
+                        formattedBin += binStr.substring(i * 16, (i + 1) * 16) + (i < 7 ? ' ' : '');
+                    }
+                    binInput.value = formattedBin;
+                }
+            }
+        }
+
+        // --- SISTEMA DE COPIADO ---
+        function copyToClipboard(elementId) {
+            const textToCopy = document.getElementById(elementId).innerText;
+            const tempTextarea = document.createElement("textarea");
+            tempTextarea.value = textToCopy;
+            document.body.appendChild(tempTextarea);
+            tempTextarea.select();
+            document.execCommand("copy");
+            document.body.removeChild(tempTextarea);
+            
+            // Retroalimentación visual temporal
+            const originalColor = document.getElementById(elementId).className;
+            document.getElementById(elementId).className += " text-indigo-400 transition-colors duration-150";
+            setTimeout(() => {
+                document.getElementById(elementId).className = originalColor;
+            }, 800);
+        }
+    </script>
+</body>
+</html>
