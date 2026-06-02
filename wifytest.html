@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wireless Link Master</title>
+<style>
+/* ── RESET & BASE ── */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --teal:#00f5d4;--green:#a8ff3e;--cobalt:#7788ff;
+  --dark:#0a0a0f;--panel:#0f0f1a;--card:#12121f;
+  --warn:#ff6b35;--err:#ff2d55;--dim:#334455;
+  --font-mono:'Courier New',Courier,monospace;
+}
+body{background:var(--dark);color:var(--teal);font-family:var(--font-mono);overflow-x:hidden;font-size:13px}
+h1,h2,.orb{font-family:Arial,sans-serif;font-weight:900;letter-spacing:2px}
+
+/* ── GLOW / NEON ── */
+.glow{text-shadow:0 0 10px currentColor}
+.nb {border:1px solid var(--teal);box-shadow:0 0 7px rgba(0,245,212,.25),inset 0 0 6px rgba(0,245,212,.05)}
+.nb-g{border:1px solid var(--green);box-shadow:0 0 7px rgba(168,255,62,.25)}
+.nb-w{border:1px solid var(--warn);box-shadow:0 0 7px rgba(255,107,53,.3)}
+.nb-e{border:1px solid var(--err);box-shadow:0 0 7px rgba(255,45,85,.35)}
+
+/* ── LAYOUT ── */
+#wrap{display:flex;flex-direction:column;height:100vh}
+#hdr{display:flex;align-items:center;justify-content:space-between;padding:6px 14px;
+  background:linear-gradient(90deg,#0a0a0f,#0f0f2a,#0a0a0f);
+  border-bottom:1px solid #1a2a3a}
+#tabs{display:flex;align-items:center;gap:4px;padding:5px 14px;
+  background:#0c0c18;border-bottom:1px solid #1a2a3a}
+#main{display:flex;flex:1;overflow:hidden}
+#left{width:215px;min-width:215px;display:flex;flex-direction:column;
+  margin:6px 0 6px 6px;padding:10px;background:var(--panel);
+  border-radius:8px;overflow-y:auto}
+#center{display:flex;flex-direction:column;flex:1;margin:6px 4px;gap:6px}
+#right{width:208px;min-width:208px;display:flex;flex-direction:column;
+  margin:6px 6px 6px 0;gap:6px}
+#bar{display:flex;align-items:center;justify-content:space-between;
+  padding:3px 14px;background:#07070f;border-top:1px solid #1a2a3a;font-size:.6rem;color:var(--dim)}
+
+/* ── PANELS ── */
+.panel{background:var(--panel);border-radius:8px}
+.card{background:var(--card);border-radius:6px}
+
+/* ── BUTTONS ── */
+.btn{cursor:pointer;transition:all .2s;font-family:Arial,sans-serif;font-size:.65rem;font-weight:700;
+  border-radius:4px;padding:5px 12px;letter-spacing:1px;border:none}
+.bt{background:transparent;border:1px solid var(--teal);color:var(--teal)}
+.bt:hover{background:rgba(0,245,212,.15);box-shadow:0 0 10px rgba(0,245,212,.4)}
+.bg{background:transparent;border:1px solid var(--green);color:var(--green)}
+.bg:hover{background:rgba(168,255,62,.15)}
+.bw{background:transparent;border:1px solid var(--warn);color:var(--warn)}
+.bw:hover{background:rgba(255,107,53,.15)}
+.be{background:transparent;border:1px solid var(--err);color:var(--err)}
+.be:hover{background:rgba(255,45,85,.15)}
+.btn-full{width:100%;margin-top:4px}
+
+/* ── TABS ── */
+.stab{cursor:pointer;transition:all .2s;padding:5px 11px;border-radius:4px;
+  font-family:Arial,sans-serif;font-size:.62rem;font-weight:700;letter-spacing:.5px;
+  border-bottom:2px solid transparent;color:#555}
+.stab:hover{color:#888}
+.stab.active{background:rgba(0,245,212,.12);border-bottom:2px solid var(--teal);color:var(--teal)}
+
+/* ── FORM ── */
+.ifield{background:#0a0a15;border:1px solid #1a2a3a;color:var(--teal);
+  border-radius:4px;padding:4px 7px;font-family:var(--font-mono);font-size:.72rem;width:100%}
+.ifield:focus{outline:none;border-color:var(--teal);box-shadow:0 0 5px rgba(0,245,212,.3)}
+select.ifield option{background:#0f0f1a}
+.crow{display:flex;align-items:center;gap:6px;margin-bottom:7px}
+.clbl{font-size:.62rem;color:#8899aa;min-width:72px}
+
+/* ── RULE ITEMS ── */
+.ri{font-size:.63rem;padding:4px 7px;border-radius:3px;margin-bottom:4px;
+  display:flex;align-items:flex-start;gap:5px}
+.ri-n{background:rgba(0,245,212,.04);border-left:3px solid #334;color:#667788}
+.ri-ok{background:rgba(168,255,62,.07);border-left:3px solid var(--green);color:var(--green)}
+.ri-fail{background:rgba(255,45,85,.07);border-left:3px solid var(--err);color:var(--err)}
+
+/* ── TOPOLOGY ── */
+#topo-area{position:relative;flex:1;border-radius:8px;overflow:hidden;
+  background:radial-gradient(ellipse at 50% 50%,#0a0f1a 0%,#050508 100%)}
+#topo-canvas{position:absolute;top:0;left:0;pointer-events:none}
+#dev-layer{position:absolute;inset:0}
+#conn-hint{position:absolute;bottom:8px;right:10px;font-size:.58rem;color:#334455;display:none}
+.grid-svg{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:.04}
+
+/* ── DEVICE NODES ── */
+.dnode{position:absolute;text-align:center;cursor:pointer;user-select:none;
+  transform:translate(-50%,-50%);z-index:10;width:74px;transition:filter .2s}
+.dnode:hover .dico{filter:drop-shadow(0 0 8px var(--teal))}
+.dnode.sel .dico{filter:drop-shadow(0 0 14px var(--green))}
+.dico{font-size:1.9rem;line-height:1}
+.dlbl{font-size:.52rem;font-family:var(--font-mono);margin-top:2px;white-space:nowrap}
+.dmode{font-size:.44rem;color:#445566;font-family:var(--font-mono)}
+
+/* ── ALERTS ── */
+.ali{animation:slin .3s ease;font-size:.62rem;padding:6px 8px;border-radius:4px;margin-bottom:3px}
+@keyframes slin{from{opacity:0;transform:translateX(16px)}to{opacity:1;transform:translateX(0)}}
+
+/* ── SPECTRUM ── */
+#spec-canvas{border-radius:4px;background:#060610;border:1px solid #1a2a3a}
+
+/* ── PACKETS ── */
+.pkt{position:absolute;width:9px;height:9px;border-radius:50%;pointer-events:none;z-index:100}
+.pk-g{background:var(--green);box-shadow:0 0 7px var(--green)}
+.pk-r{background:var(--err);box-shadow:0 0 7px var(--err)}
+
+/* ── MISC ── */
+.pulse{animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.45}}
+.blink{animation:blk 1s steps(1) infinite}
+@keyframes blk{0%,100%{opacity:1}50%{opacity:0}}
+.scan{position:fixed;top:0;left:0;width:100%;height:2px;
+  background:linear-gradient(90deg,transparent,var(--teal),transparent);
+  animation:sc 4s linear infinite;opacity:.25;pointer-events:none;z-index:999}
+@keyframes sc{from{top:-2px}to{top:100vh}}
+.mac-badge{font-size:.58rem;font-family:var(--font-mono)}
+::-webkit-scrollbar{width:4px}
+::-webkit-scrollbar-track{background:#0a0a0f}
+::-webkit-scrollbar-thumb{background:var(--teal)}
+
+/* ── VICTORY ── */
+#vic{position:fixed;inset:0;background:rgba(0,0,0,.93);z-index:1000;
+  display:none;align-items:center;justify-content:center}
+#vic-box{text-align:center;animation:vani .45s ease}
+@keyframes vani{from{opacity:0;transform:scale(.8)}to{opacity:1;transform:scale(1)}}
+
+/* ── SCENARIO PANEL ── */
+#sce-panel{padding:8px 12px;border-radius:8px;background:rgba(0,20,40,.8);
+  display:flex;align-items:flex-start;gap:10px}
+.sce-desc{font-size:.74rem;line-height:1.5;color:#aabbcc}
+</style>
+</head>
+<body>
+<div class="scan"></div>
+
+<!-- HEADER -->
+<div id="hdr">
+  <div style="display:flex;align-items:center;gap:10px">
+    <div style="font-size:1.6rem">📡</div>
+    <div>
+      <div class="orb glow" style="font-size:1.1rem;color:var(--teal)">WIRELESS LINK MASTER</div>
+      <div style="font-size:.56rem;color:#445566;letter-spacing:3px">NETWORK SIMULATOR · IEEE 802.11 · CCNA/CWNA</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:16px">
+    <div style="text-align:center">
+      <div id="score-disp" class="orb glow" style="font-size:1.3rem;color:var(--green)">0</div>
+      <div style="font-size:.52rem;color:#445566;letter-spacing:2px">PUNTOS</div>
+    </div>
+    <div style="text-align:center">
+      <div id="timer-disp" class="orb pulse" style="font-size:1.3rem;color:var(--warn)">15:00</div>
+      <div style="font-size:.52rem;color:#445566;letter-spacing:2px">TIEMPO</div>
+    </div>
+    <button class="btn be" id="btn-reset">&#8635; RESET</button>
+  </div>
+</div>
+
+<!-- TABS -->
+<div id="tabs">
+  <div style="font-size:.6rem;color:#334455;margin-right:4px">&#9776;</div>
+  <div class="stab active" data-s="1" onclick="loadScenario(1)">&#9749; S1: Café BSS</div>
+  <div class="stab" data-s="2" onclick="loadScenario(2)">&#9883; S2: Bridge P2P 5km</div>
+  <div class="stab" data-s="3" onclick="loadScenario(3)">&#9724; S3: Bodega ESS/WDS</div>
+  <div style="margin-left:auto;display:flex;align-items:center;gap:6px">
+    <span style="font-size:.58rem;color:#334455">TOPOLOGÍA:</span>
+    <span id="topo-badge" class="orb" style="font-size:.6rem;padding:2px 8px;border-radius:3px;background:rgba(0,245,212,.08);color:var(--teal);border:1px solid rgba(0,245,212,.25)">BSS</span>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div id="main">
+
+  <!-- LEFT PANEL -->
+  <div id="left" class="nb">
+    <div class="orb" style="font-size:.68rem;color:var(--teal);letter-spacing:1px;margin-bottom:10px">
+      &#9881; CONFIG PANEL
+    </div>
+
+    <div style="margin-bottom:10px">
+      <div style="font-size:.58rem;color:#445566;margin-bottom:4px;letter-spacing:1px">DISPOSITIVO ACTIVO</div>
+      <div id="sel-name" class="card nb" style="padding:6px;text-align:center;font-size:.7rem;color:var(--green)">
+        — Selecciona un nodo —
+      </div>
+    </div>
+
+    <div id="dev-cfg" style="display:none">
+      <div class="crow"><span class="clbl">ESSID:</span>
+        <input class="ifield" id="cfg-essid" type="text" maxlength="16" placeholder="WiFi_Name"></div>
+      <div class="crow"><span class="clbl">Canal:</span>
+        <select class="ifield" id="cfg-ch">
+          <option value="1">Ch 1 (2412 MHz)</option>
+          <option value="6">Ch 6 (2437 MHz)</option>
+          <option value="11">Ch 11 (2462 MHz)</option>
+          <option value="36">Ch 36 (5 GHz)</option>
+          <option value="40">Ch 40 (5 GHz)</option>
+          <option value="44">Ch 44 (5 GHz)</option>
+        </select></div>
+      <div class="crow"><span class="clbl">Modo AP:</span>
+        <select class="ifield" id="cfg-mode" onchange="toggleBridgeCfg()">
+          <option value="ap">Access Point</option>
+          <option value="repeater">Repetidor</option>
+          <option value="bridge-root">Bridge Root</option>
+          <option value="bridge-nonroot">Bridge Non-Root</option>
+          <option value="client">Cliente</option>
+          <option value="switch">Switch</option>
+        </select></div>
+      <div id="bridge-cfg" style="display:none">
+        <div class="crow"><span class="clbl">MAC Remota:</span>
+          <input class="ifield" id="cfg-rmac" type="text" placeholder="AA:BB:CC:DD:EE:FF"></div>
+        <div class="crow"><span class="clbl">WEP Key:</span>
+          <input class="ifield" id="cfg-wep" type="text" placeholder="clave1234"></div>
+      </div>
+      <div class="crow"><span class="clbl">IP:</span>
+        <input class="ifield" id="cfg-ip" type="text" placeholder="192.168.1.x"></div>
+      <div style="margin-bottom:8px">
+        <div class="clbl" style="margin-bottom:3px">MAC (BSSID):</div>
+        <div id="cfg-mac" class="mac-badge" style="padding:3px 6px;border-radius:3px;background:rgba(168,255,62,.07);
+          border:1px solid rgba(168,255,62,.2);color:var(--green);text-align:center">--:--:--:--:--:--</div>
+      </div>
+      <button class="btn bt btn-full" onclick="applyDevCfg()">&#128190; APLICAR</button>
+      <button class="btn bw btn-full" style="margin-top:4px" onclick="removeLastConn()">&#10006; QUITAR ENLACE</button>
+    </div>
+
+    <!-- Rules -->
+    <div style="margin-top:10px;border-top:1px solid #1a2a3a;padding-top:8px">
+      <div class="orb" style="font-size:.6rem;color:var(--warn);letter-spacing:1px;margin-bottom:6px">
+        &#9888; REGLAS DEL PUENTE
+      </div>
+      <div id="rules-panel">
+        <div class="ri ri-n">&#9679; R1: Puente ≠ AP mismo iface</div>
+        <div class="ri ri-n">&#9679; R2: Solo P2P o P2MP</div>
+        <div class="ri ri-n">&#9679; R3: Non-Root &#8594; Root &#8594; Non-Root</div>
+        <div class="ri ri-n">&#9679; R4: 1 solo Bridge Root</div>
+        <div class="ri ri-n">&#9679; R5: Distancia ≤ cobertura</div>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div style="margin-top:auto;padding-top:8px;border-top:1px solid #1a2a3a">
+      <button class="btn bg btn-full" onclick="validateNetwork()">&#10003; VALIDAR RED</button>
+      <button class="btn bt btn-full" onclick="sendTestPacket()">&#9992; TEST PACKET</button>
+    </div>
+  </div>
+
+  <!-- CENTER -->
+  <div id="center">
+    <!-- Scenario bar -->
+    <div id="sce-panel" class="nb">
+      <div style="font-size:1.1rem;flex-shrink:0;margin-top:2px">&#128204;</div>
+      <div style="flex:1">
+        <div id="sce-title" class="orb" style="font-size:.72rem;color:var(--teal);letter-spacing:1px;margin-bottom:3px">
+          ESCENARIO 1: EL CAFÉ LOCAL</div>
+        <div id="sce-desc" class="sce-desc">Conecta 4 laptops al Router WiFi...</div>
+      </div>
+      <div style="flex-shrink:0">
+        <div class="card nb" style="padding:6px 10px;min-width:130px">
+          <div class="orb" style="font-size:.52rem;color:var(--warn);letter-spacing:1px;margin-bottom:3px">OBJETIVO</div>
+          <div id="obj-txt" style="font-size:.62rem;color:#8899aa;line-height:1.4">Configura el router y conecta todos los clientes</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Topology -->
+    <div id="topo-area" class="nb">
+      <canvas id="topo-canvas"></canvas>
+      <div id="dev-layer"></div>
+      <svg class="grid-svg">
+        <defs><pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+          <path d="M40 0L0 0 0 40" fill="none" stroke="#00f5d4" stroke-width=".4"/>
+        </pattern></defs>
+        <rect width="100%" height="100%" fill="url(#grid)"/>
+      </svg>
+      <div id="conn-hint">&#128279; Click en otro dispositivo para conectar</div>
+    </div>
+
+    <!-- Help -->
+    <div style="display:flex;gap:6px;padding:4px 2px">
+      <div style="font-size:.58rem;color:#334455">
+        <b style="color:#445566">Click izq:</b> seleccionar &nbsp;
+        <b style="color:#445566">Click der:</b> iniciar enlace &nbsp;
+        <b style="color:#445566">Clic en destino:</b> conectar
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL -->
+  <div id="right">
+
+    <!-- Alerts -->
+    <div class="panel nb" style="flex:1;padding:10px;overflow:hidden;display:flex;flex-direction:column">
+      <div class="orb pulse" style="font-size:.62rem;color:var(--warn);letter-spacing:1px;margin-bottom:6px">
+        &#9888; ALERTAS TÉCNICAS
+      </div>
+      <div id="alerts" style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:3px">
+        <div class="ali card" style="color:#445566;text-align:center;border:1px dashed #1a2a3a">
+          <div style="font-size:1.2rem;margin-bottom:3px">&#128225;</div>Sistema en espera...
+        </div>
+      </div>
+    </div>
+
+    <!-- WiFi Analyzer -->
+    <div class="panel nb" style="padding:10px">
+      <div class="orb" style="font-size:.6rem;color:var(--teal);letter-spacing:1px;margin-bottom:6px">
+        &#128200; WIFI ANALYZER
+      </div>
+      <div style="display:flex;gap:4px;margin-bottom:6px">
+        <button class="btn bt" id="btn24" style="flex:1;font-size:.55rem;padding:3px 4px" onclick="setBand('2.4')">2.4 GHz</button>
+        <button class="btn" id="btn5" style="flex:1;font-size:.55rem;padding:3px 4px;border:1px solid #223;color:#445566" onclick="setBand('5')">5 GHz</button>
+      </div>
+      <canvas id="spec-canvas" width="186" height="98"></canvas>
+      <div style="display:flex;justify-content:space-between;font-size:.52rem;color:#445566;margin-top:2px">
+        <span>Ch 1</span><span>Ch 6</span><span>Ch 11</span>
+      </div>
+      <div style="margin-top:6px;font-size:.6rem;color:#8899aa">
+        <div style="display:flex;justify-content:space-between;margin-bottom:3px">
+          <span>Canal activo:</span>
+          <span id="act-ch" class="orb" style="color:var(--green)">—</span>
+        </div>
+        <div style="display:flex;justify-content:space-between">
+          <span>Ruido:</span>
+          <span id="noise-val" style="color:var(--warn)">-85 dBm</span>
+        </div>
+      </div>
+      <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap">
+        <div style="display:flex;align-items:center;gap:3px;font-size:.52rem">
+          <span style="width:8px;height:8px;background:var(--teal);border-radius:50%;display:inline-block"></span>
+          <span style="color:#8899aa">Tu AP</span>
+        </div>
+        <div style="display:flex;align-items:center;gap:3px;font-size:.52rem">
+          <span style="width:8px;height:8px;background:var(--warn);border-radius:50%;display:inline-block"></span>
+          <span style="color:#8899aa">Interferencia</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAC Table -->
+    <div class="panel nb" style="padding:8px">
+      <div class="orb" style="font-size:.6rem;color:var(--cobalt);letter-spacing:1px;margin-bottom:5px">
+        &#128203; MAC TABLE 802.1D
+      </div>
+      <div id="mac-table" style="font-size:.56rem;color:#8899aa;max-height:80px;overflow-y:auto">
+        <div style="color:#334455">— Sin entradas —</div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- STATUS BAR -->
+<div id="bar">
+  <div><span class="blink" style="color:var(--green)">&#9679;</span> SIM ACTIVO · IEEE 802.11</div>
+  <div id="status-msg" style="color:var(--teal)">Selecciona un escenario para comenzar</div>
+  <div>Layer 1 + Layer 2 · 802.1D STP</div>
+</div>
+
+<!-- VICTORY -->
+<div id="vic">
+  <div id="vic-box">
+    <div style="font-size:4.5rem;margin-bottom:12px">&#127942;</div>
+    <div class="orb glow" style="font-size:2rem;color:var(--green);letter-spacing:4px;margin-bottom:6px">
+      WIRELESS LINK MASTER!</div>
+    <div class="orb" style="font-size:1rem;color:var(--teal);margin-bottom:16px">
+      Red Inalámbrica Validada Exitosamente</div>
+    <div id="vic-details" class="card nb-g" style="max-width:480px;margin:0 auto 20px;padding:14px;font-size:.75rem;color:#aabbcc"></div>
+    <div style="display:flex;gap:12px;justify-content:center">
+      <button class="btn bg" onclick="nextScenario()">&#8594; SIGUIENTE ESCENARIO</button>
+      <button class="btn bt" onclick="closeVic()">&#10006; CERRAR</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+const GS={
+  scenario:1, score:0, timer:900,
+  timerInt:null, selDev:null, connFrom:null,
+  conns:[], devs:[], band:'2.4', noiseOff:0
+};
+
+// ═══════════════════════════════════════════════
+// DEVICE HELPERS
+// ═══════════════════════════════════════════════
+const ICONS={router:'🔴',ap:'📡',laptop:'💻',pc:'🖥️',switch:'🔀',smartphone:'📱'};
+const COLS={router:'#00f5d4',ap:'#a8ff3e',laptop:'#7788ff',pc:'#ffaa00',switch:'#ff6b35',smartphone:'#ff44aa'};
+const MODE_LBL={ap:'[AP]',repeater:'[REP]','bridge-root':'[BROOT]','bridge-nonroot':'[BNROOT]',
+  client:'[CLI]',switch:'[SW]',pc:'[PC]'};
+
+function ico(t){return ICONS[t]||'?'}
+function col(t){return COLS[t]||'#888'}
+function mlbl(m){return MODE_LBL[m]||`[${m}]`}
+
+// ═══════════════════════════════════════════════
+// SCENARIOS
+// ═══════════════════════════════════════════════
+const SC={
+  1:{
+    title:'ESCENARIO 1: EL CAFÉ LOCAL',
+    topo:'BSS',
+    desc:'Conecta 4 laptops al Router WiFi en el canal correcto para evitar interferencias. Topología: <b style="color:var(--teal)">BSS</b>. Configura el router en canal limpio y conecta todos los clientes.',
+    obj:'Conecta 4 laptops al router. Selecciona canal sin interferencia.',
+    interference:[{ch:1,p:-62},{ch:1,p:-68},{ch:6,p:-71},{ch:11,p:-80}],
+    bestCh:11,
+    devs:[
+      {id:'r1',t:'router',lbl:'Router WiFi',x:.5,y:.22,mac:'AA:BB:CC:00:00:01',ip:'192.168.1.1',essid:'CafeWiFi',ch:6,mode:'ap',rmac:'',wep:''},
+      {id:'l1',t:'laptop',lbl:'Laptop A',x:.2,y:.62,mac:'AA:BB:CC:00:00:02',ip:'192.168.1.10',essid:'',ch:6,mode:'client',rmac:'',wep:''},
+      {id:'l2',t:'laptop',lbl:'Laptop B',x:.38,y:.76,mac:'AA:BB:CC:00:00:03',ip:'192.168.1.11',essid:'',ch:6,mode:'client',rmac:'',wep:''},
+      {id:'l3',t:'laptop',lbl:'Laptop C',x:.62,y:.76,mac:'AA:BB:CC:00:00:04',ip:'192.168.1.12',essid:'',ch:6,mode:'client',rmac:'',wep:''},
+      {id:'l4',t:'laptop',lbl:'Laptop D',x:.8,y:.62,mac:'AA:BB:CC:00:00:05',ip:'192.168.1.13',essid:'',ch:6,mode:'client',rmac:'',wep:''}
+    ],
+    validate(devs,conns){
+      const router=devs.find(d=>d.id==='r1'), laps=devs.filter(d=>d.t==='laptop'), e=[];
+      if(!router) return{ok:false,e:['No hay router']};
+      if(router.mode!=='ap') e.push('El router debe estar en modo Access Point');
+      if(router.ch!=11) e.push(`Canal ${router.ch} tiene interferencia alta — usa canal 11`);
+      const cnt=laps.filter(l=>conns.some(c=>(c.f===router.id&&c.t===l.id)||(c.t===router.id&&c.f===l.id))).length;
+      if(cnt<4) e.push(`Faltan ${4-cnt} laptop(s) por conectar al router`);
+      return{ok:e.length===0,e};
+    }
+  },
+  2:{
+    title:'ESCENARIO 2: ENLACE INDUSTRIAL A 5KM',
+    topo:'WDS Bridge P2P',
+    desc:'Interconecta <b style="color:var(--teal)">Main Location</b> con <b style="color:var(--teal)">Remote Location</b> via WDS Bridge P2P. Configura cruzadamente las MACs, mismo canal y misma clave WEP.',
+    obj:'Bridge P2P: MACs cruzadas, mismo canal y WEP idéntico.',
+    interference:[{ch:6,p:-55},{ch:6,p:-60},{ch:1,p:-75}],
+    bestCh:11,
+    devs:[
+      {id:'apm',t:'ap',lbl:'AP Main (Root)',x:.22,y:.45,mac:'BB:00:00:00:01:AA',ip:'192.168.10.1',essid:'IndLink',ch:6,mode:'bridge-root',rmac:'',wep:''},
+      {id:'apr',t:'ap',lbl:'AP Remote',x:.78,y:.45,mac:'BB:00:00:00:02:BB',ip:'192.168.10.2',essid:'IndLink',ch:6,mode:'bridge-nonroot',rmac:'',wep:''},
+      {id:'swm',t:'switch',lbl:'Switch Main',x:.1,y:.72,mac:'CC:00:00:00:01:AA',ip:'192.168.10.10',essid:'',ch:0,mode:'switch',rmac:'',wep:''},
+      {id:'swr',t:'switch',lbl:'Switch Remote',x:.9,y:.72,mac:'CC:00:00:00:02:BB',ip:'192.168.10.20',essid:'',ch:0,mode:'switch',rmac:'',wep:''},
+      {id:'pcm',t:'pc',lbl:'PC Main',x:.1,y:.18,mac:'DD:00:00:00:01:AA',ip:'192.168.10.100',essid:'',ch:0,mode:'client',rmac:'',wep:''},
+      {id:'pcr',t:'pc',lbl:'PC Remote',x:.9,y:.18,mac:'DD:00:00:00:02:BB',ip:'192.168.10.200',essid:'',ch:0,mode:'client',rmac:'',wep:''}
+    ],
+    validate(devs,conns){
+      const apm=devs.find(d=>d.id==='apm'), apr=devs.find(d=>d.id==='apr'), e=[];
+      if(!apm||!apr) return{ok:false,e:['Faltan APs']};
+      const roots=devs.filter(d=>d.mode==='bridge-root');
+      if(roots.length!==1) e.push(`R4: Debe haber exactamente 1 Bridge Root (hay: ${roots.length})`);
+      if(apm.rmac.toUpperCase().trim()!==apr.mac.toUpperCase().trim())
+        e.push('Config: MAC remota de AP Main debe ser la MAC de AP Remote');
+      if(apr.rmac.toUpperCase().trim()!==apm.mac.toUpperCase().trim())
+        e.push('Config: MAC remota de AP Remote debe ser la MAC de AP Main');
+      if(apm.ch!=apr.ch) e.push(`Canales distintos: Main Ch${apm.ch} — Remote Ch${apr.ch}`);
+      if(apm.essid.trim()!==apr.essid.trim()) e.push('ESSID diferentes entre los APs');
+      if(!apm.wep||!apm.wep.trim()) e.push('Falta clave WEP en AP Main');
+      if(!apr.wep||!apr.wep.trim()) e.push('Falta clave WEP en AP Remote');
+      if(apm.wep&&apr.wep&&apm.wep.trim()!==apr.wep.trim()) e.push('Las claves WEP deben ser idénticas');
+      const link=conns.find(c=>(c.f==='apm'&&c.t==='apr')||(c.f==='apr'&&c.t==='apm'));
+      if(!link) e.push('Falta el enlace WDS Bridge entre AP Main y AP Remote');
+      if(apm.ch!=11) e.push(`Recomendación: canal ${apm.ch} tiene interferencia — usa canal 11`);
+      return{ok:e.length===0,e};
+    }
+  },
+  3:{
+    title:'ESCENARIO 3: LA BODEGA EXTENDIDA',
+    topo:'ESS / WDS',
+    desc:'Extiende la cobertura con 3 APs en ESS. <b style="color:var(--err)">¡LOOP!</b> Hay 2 Bridge Root en el mismo dominio. Corrige la configuración para eliminar el bucle de broadcast.',
+    obj:'ESS: 3 APs con ESSID idéntico. Corrige el loop (1 solo Root).',
+    interference:[{ch:1,p:-58},{ch:6,p:-63},{ch:6,p:-70},{ch:11,p:-75}],
+    bestCh:1,
+    devs:[
+      {id:'rm',t:'router',lbl:'Router Principal',x:.5,y:.16,mac:'EE:00:00:00:01:AA',ip:'10.0.0.1',essid:'BodegaNet',ch:1,mode:'ap',rmac:'',wep:''},
+      {id:'az1',t:'ap',lbl:'AP Zona-1',x:.18,y:.5,mac:'EE:00:00:00:02:BB',ip:'10.0.0.2',essid:'BodegaNet',ch:6,mode:'bridge-root',rmac:'',wep:'bodega123'},
+      {id:'az2',t:'ap',lbl:'AP Zona-2',x:.82,y:.5,mac:'EE:00:00:00:03:CC',ip:'10.0.0.3',essid:'BodegaNet',ch:6,mode:'bridge-root',rmac:'',wep:'bodega123'},
+      {id:'az3',t:'ap',lbl:'AP Zona-3 (Ext)',x:.5,y:.74,mac:'EE:00:00:00:04:DD',ip:'10.0.0.4',essid:'BodegaNet',ch:1,mode:'repeater',rmac:'',wep:''},
+      {id:'lz1',t:'laptop',lbl:'Laptop Z1',x:.08,y:.82,mac:'FF:00:00:00:01:AA',ip:'10.0.0.101',essid:'',ch:1,mode:'client',rmac:'',wep:''},
+      {id:'lz2',t:'laptop',lbl:'Laptop Z2',x:.92,y:.82,mac:'FF:00:00:00:02:BB',ip:'10.0.0.102',essid:'',ch:1,mode:'client',rmac:'',wep:''},
+      {id:'lz3',t:'laptop',lbl:'Laptop Z3',x:.5,y:.88,mac:'FF:00:00:00:03:CC',ip:'10.0.0.103',essid:'',ch:1,mode:'client',rmac:'',wep:''}
+    ],
+    validate(devs,conns){
+      const e=[];
+      const aps=devs.filter(d=>d.t==='ap'||d.t==='router');
+      const essids=[...new Set(aps.map(a=>a.essid.trim().toLowerCase()).filter(Boolean))];
+      if(essids.length>1) e.push('ESS: Todos los APs deben compartir el mismo ESSID');
+      const roots=devs.filter(d=>d.mode==='bridge-root');
+      if(roots.length>1) e.push(`R4: ${roots.length} Bridge Root activos → BROADCAST LOOP! Solo puede haber 1`);
+      if(roots.length===0&&devs.some(d=>d.mode==='bridge-nonroot')) e.push('R4: No hay Bridge Root configurado');
+      const rmain=devs.find(d=>d.id==='rm');
+      if(rmain&&rmain.mode!=='ap') e.push('El Router Principal debe estar en modo Access Point');
+      const laps=devs.filter(d=>d.t==='laptop');
+      const cc=laps.filter(l=>conns.some(c=>c.f===l.id||c.t===l.id)).length;
+      if(cc<3) e.push(`Faltan ${3-cc} laptop(s) por conectar`);
+      return{ok:e.length===0,e};
+    }
+  }
+};
+
+// ═══════════════════════════════════════════════
+// TOPOLOGY CANVAS
+// ═══════════════════════════════════════════════
+let canvas, ctx, devLayer, mousePos=null;
+
+function initTopo(){
+  canvas=document.getElementById('topo-canvas');
+  devLayer=document.getElementById('dev-layer');
+  const area=document.getElementById('topo-area');
+  canvas.width=area.clientWidth;
+  canvas.height=area.clientHeight;
+  drawTopo();
+}
+
+function drawTopo(){
+  const area=document.getElementById('topo-area');
+  if(!area) return;
+  canvas.width=area.clientWidth;
+  canvas.height=area.clientHeight;
+  const W=canvas.width, H=canvas.height;
+  ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+
+  // connections
+  GS.conns.forEach(cn=>{
+    const d1=GS.devs.find(d=>d.id===cn.f), d2=GS.devs.find(d=>d.id===cn.t);
+    if(!d1||!d2) return;
+    const x1=d1.x*W,y1=d1.y*H,x2=d2.x*W,y2=d2.y*H;
+    ctx.save();
+    ctx.setLineDash([7,4]);
+    ctx.lineDashOffset=-(Date.now()/50%22);
+    const c=cn.ok?'#a8ff3e':cn.err?'#ff2d55':'#00f5d4';
+    ctx.strokeStyle=c; ctx.shadowColor=c; ctx.shadowBlur=8;
+    ctx.lineWidth=cn.ok?2.5:1.5; ctx.globalAlpha=.85;
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    // label
+    ctx.setLineDash([]); ctx.font='8px Courier New';
+    ctx.fillStyle=c; ctx.shadowBlur=4; ctx.globalAlpha=.65;
+    const lbl=connLbl(cn);
+    ctx.fillText(lbl,(x1+x2)/2+3,(y1+y2)/2-4);
+    ctx.restore();
+  });
+
+  // connecting line
+  if(GS.connFrom && mousePos){
+    const d=GS.devs.find(d=>d.id===GS.connFrom);
+    if(d){
+      ctx.save(); ctx.setLineDash([4,4]);
+      ctx.strokeStyle='#a8ff3e'; ctx.lineWidth=1.5; ctx.globalAlpha=.55;
+      ctx.beginPath(); ctx.moveTo(d.x*W,d.y*H);
+      ctx.lineTo(mousePos.x,mousePos.y); ctx.stroke();
+      ctx.restore();
+    }
+  }
+
+  // devices
+  devLayer.innerHTML='';
+  GS.devs.forEach(dev=>{
+    const px=dev.x*W, py=dev.y*H;
+    const el=document.createElement('div');
+    el.className='dnode'+(GS.selDev===dev.id?' sel':'');
+    el.style.left=px+'px'; el.style.top=py+'px';
+    const c=col(dev.t);
+    const isBridge=['bridge-root','bridge-nonroot'].includes(dev.mode);
+    el.innerHTML=`
+      <div class="dico" style="text-shadow:0 0 12px ${c}">${ico(dev.t)}</div>
+      <div class="dlbl" style="color:${c};text-shadow:0 0 5px ${c}">${dev.lbl}</div>
+      <div class="dmode">${mlbl(dev.mode)}</div>
+      ${isBridge||dev.mode==='ap'||dev.mode==='repeater'?`<div class="dmode">Ch${dev.ch}</div>`:''}
+      ${GS.connFrom===dev.id?`<div style="position:absolute;top:-4px;right:-4px;width:9px;height:9px;background:var(--green);border-radius:50%;box-shadow:0 0 7px var(--green)"></div>`:''}
+    `;
+    el.addEventListener('click',e=>{e.stopPropagation();onDevClick(dev.id);});
+    el.addEventListener('contextmenu',e=>{e.preventDefault();startConn(dev.id);});
+    devLayer.appendChild(el);
+  });
+}
+
+function connLbl(cn){
+  const d1=GS.devs.find(d=>d.id===cn.f), d2=GS.devs.find(d=>d.id===cn.t);
+  const isBr=['bridge-root','bridge-nonroot'].includes(d1?.mode)&&['bridge-root','bridge-nonroot'].includes(d2?.mode);
+  return isBr?'WDS Bridge':cn.wired?'Eth Cable':'WiFi';
+}
+
+// ═══════════════════════════════════════════════
+// DEVICE CLICK / CONNECT
+// ═══════════════════════════════════════════════
+function onDevClick(id){
+  if(GS.connFrom && GS.connFrom!==id){
+    addConn(GS.connFrom,id);
+    GS.connFrom=null;
+    document.getElementById('conn-hint').style.display='none';
+    document.body.style.cursor='default';
+    drawTopo(); return;
+  }
+  GS.selDev=id; GS.connFrom=null;
+  loadDevCfg(GS.devs.find(d=>d.id===id));
+  drawTopo();
+}
+
+function startConn(id){
+  GS.connFrom=id; GS.selDev=id;
+  document.getElementById('conn-hint').style.display='block';
+  document.body.style.cursor='crosshair';
+  addAlert('info',`Conectando desde <b>${GS.devs.find(d=>d.id===id)?.lbl}</b> — Click en destino`);
+  drawTopo();
+}
+
+document.getElementById('topo-area').addEventListener('mousemove',e=>{
+  const r=e.currentTarget.getBoundingClientRect();
+  mousePos={x:e.clientX-r.left,y:e.clientY-r.top};
+  if(GS.connFrom) drawTopo();
+});
+
+document.getElementById('topo-area').addEventListener('click',e=>{
+  if(e.target===e.currentTarget||e.target.id==='topo-canvas'){
+    if(!GS.connFrom){GS.selDev=null;document.getElementById('dev-cfg').style.display='none';document.getElementById('sel-name').textContent='— Selecciona un nodo —';}
+    GS.connFrom=null;
+    document.getElementById('conn-hint').style.display='none';
+    document.body.style.cursor='default';
+    drawTopo();
+  }
+});
+
+function addConn(fid,tid){
+  const exists=GS.conns.find(c=>(c.f===fid&&c.t===tid)||(c.f===tid&&c.t===fid));
+  if(exists){addAlert('warn','Conexión ya existente entre esos dispositivos');return;}
+  const d1=GS.devs.find(d=>d.id===fid), d2=GS.devs.find(d=>d.id===tid);
+  // R1 check
+  const isBridgeIface=['bridge-root','bridge-nonroot'].includes(d1?.mode)||['bridge-root','bridge-nonroot'].includes(d2?.mode);
+  const isClient=['laptop','smartphone'].includes(d1?.t)||['laptop','smartphone'].includes(d2?.t);
+  if(isBridgeIface&&isClient){
+    addAlert('error','&#10006; REGLA 1: Puente inalámbrico NO puede conectar clientes en la misma interfaz!');
+    checkRules(); return;
+  }
+  GS.conns.push({f:fid,t:tid,ok:false,err:false,wired:false});
+  addAlert('ok',`Enlace: <b>${d1?.lbl}</b> &#8596; <b>${d2?.lbl}</b>`);
+  refreshMACTable(); checkRules();
+}
+
+function removeLastConn(){
+  const sid=GS.selDev;
+  const idx=sid?GS.conns.findLastIndex(c=>c.f===sid||c.t===sid):GS.conns.length-1;
+  if(idx>=0){GS.conns.splice(idx,1);addAlert('warn','Conexión eliminada');drawTopo();refreshMACTable();}
+}
+
+// ═══════════════════════════════════════════════
+// CONFIG PANEL
+// ═══════════════════════════════════════════════
+function loadDevCfg(dev){
+  if(!dev) return;
+  document.getElementById('sel-name').textContent=ico(dev.t)+' '+dev.lbl;
+  document.getElementById('dev-cfg').style.display='block';
+  document.getElementById('cfg-essid').value=dev.essid||'';
+  document.getElementById('cfg-ch').value=dev.ch||6;
+  document.getElementById('cfg-mode').value=dev.mode||'ap';
+  document.getElementById('cfg-ip').value=dev.ip||'';
+  document.getElementById('cfg-mac').textContent=dev.mac||'--:--:--:--:--:--';
+  document.getElementById('cfg-rmac').value=dev.rmac||'';
+  document.getElementById('cfg-wep').value=dev.wep||'';
+  toggleBridgeCfg();
+  updChDisplay(dev);
+}
+
+function toggleBridgeCfg(){
+  const m=document.getElementById('cfg-mode').value;
+  document.getElementById('bridge-cfg').style.display=['bridge-root','bridge-nonroot'].includes(m)?'block':'none';
+}
+
+function applyDevCfg(){
+  if(!GS.selDev) return;
+  const dev=GS.devs.find(d=>d.id===GS.selDev);
+  if(!dev) return;
+  dev.essid=document.getElementById('cfg-essid').value;
+  dev.ch=parseInt(document.getElementById('cfg-ch').value);
+  dev.mode=document.getElementById('cfg-mode').value;
+  dev.ip=document.getElementById('cfg-ip').value;
+  dev.rmac=document.getElementById('cfg-rmac').value;
+  dev.wep=document.getElementById('cfg-wep').value;
+  addAlert('ok',`Config aplicada en <b>${dev.lbl}</b>: Ch${dev.ch} | ${dev.mode.toUpperCase()}`);
+  updChDisplay(dev); checkRules(); drawTopo(); refreshMACTable();
+}
+
+function updChDisplay(dev){
+  document.getElementById('act-ch').textContent=dev.ch?`Ch ${dev.ch}`:'—';
+  const sc=SC[GS.scenario];
+  const inf=sc.interference.find(i=>i.ch==dev.ch);
+  const nv=inf?inf.p:-90;
+  const nel=document.getElementById('noise-val');
+  nel.textContent=`${nv} dBm`;
+  nel.style.color=nv>-70?'var(--err)':nv>-80?'var(--warn)':'var(--green)';
+  drawSpectrum();
+}
+
+// ═══════════════════════════════════════════════
+// ALERTS
+// ═══════════════════════════════════════════════
+function addAlert(type,msg){
+  const list=document.getElementById('alerts');
+  const cols={ok:'var(--green)',warn:'var(--warn)',error:'var(--err)',info:'var(--teal)'};
+  const brd={ok:'nb-g',warn:'nb-w',error:'nb-e',info:'nb'};
+  const pfx={ok:'&#10003;',warn:'&#9888;',error:'&#10006;',info:'&#9432;'};
+  const el=document.createElement('div');
+  el.className=`ali card ${brd[type]||'nb'}`;
+  el.style.cssText=`color:${cols[type]||'#888'};border-left:3px solid ${cols[type]||'#888'}`;
+  el.innerHTML=`${pfx[type]||''} ${msg}`;
+  list.insertBefore(el,list.firstChild);
+  while(list.children.length>14) list.removeChild(list.lastChild);
+  document.getElementById('status-msg').innerHTML=msg;
+}
+
+// ═══════════════════════════════════════════════
+// RULES CHECK
+// ═══════════════════════════════════════════════
+function checkRules(){
+  const res=[true,true,true,true,true];
+  const roots=GS.devs.filter(d=>d.mode==='bridge-root');
+  const nroots=GS.devs.filter(d=>d.mode==='bridge-nonroot');
+
+  // R1
+  GS.conns.forEach(cn=>{
+    const d1=GS.devs.find(d=>d.id===cn.f), d2=GS.devs.find(d=>d.id===cn.t);
+    if(!d1||!d2) return;
+    const bport=['bridge-root','bridge-nonroot'].includes(d1.mode)||['bridge-root','bridge-nonroot'].includes(d2.mode);
+    const cli=['laptop','smartphone'].includes(d1.t)||['laptop','smartphone'].includes(d2.t);
+    if(bport&&cli) res[0]=false;
+  });
+
+  // R2: valid if P2P (1 root + 1 nonroot) or P2MP (1 root + n nonroot)
+  const bridgeConns=GS.conns.filter(c=>{
+    const d1=GS.devs.find(d=>d.id===c.f), d2=GS.devs.find(d=>d.id===c.t);
+    return ['bridge-root','bridge-nonroot'].includes(d1?.mode)&&['bridge-root','bridge-nonroot'].includes(d2?.mode);
+  });
+  if(bridgeConns.length>0 && roots.length!==1) res[1]=false;
+
+  // R3: non-roots must connect via root
+  nroots.forEach(nr=>{
+    const ok=GS.conns.some(c=>{
+      const d1=GS.devs.find(d=>d.id===c.f), d2=GS.devs.find(d=>d.id===c.t);
+      return (c.f===nr.id||c.t===nr.id)&&(d1?.mode==='bridge-root'||d2?.mode==='bridge-root');
+    });
+    if(!ok&&nroots.length>1) res[2]=false;
+  });
+
+  // R4
+  if(roots.length>1) res[3]=false;
+
+  // R5 (distance heuristic for S2)
+  if(GS.scenario===2){
+    const apm=GS.devs.find(d=>d.id==='apm');
+    if(apm&&apm.ch<6) res[4]=false;
+  }
+
+  const lbls=['R1: Puente ≠ AP mismo iface','R2: Solo P2P o P2MP',
+    'R3: Non-Root → Root → Non-Root','R4: 1 solo Bridge Root','R5: Distancia ≤ cobertura'];
+  const rp=document.getElementById('rules-panel');
+  [...rp.children].forEach((el,i)=>{
+    el.className=`ri ${res[i]?'ri-ok':'ri-fail'}`;
+    el.innerHTML=`${res[i]?'&#10003;':'&#10006;'} ${lbls[i]}`;
+  });
+
+  if(!res[3]&&roots.length>1) addAlert('error',`R4 VIOLADA: ${roots.length} Bridge Root → BROADCAST LOOP!`);
+  if(!res[0]) addAlert('error','R1 VIOLADA: Puente con cliente inalámbrico en misma interfaz!');
+  return res.every(Boolean);
+}
+
+// ═══════════════════════════════════════════════
+// VALIDATE
+// ═══════════════════════════════════════════════
+function validateNetwork(){
+  const sc=SC[GS.scenario];
+  const result=sc.validate(GS.devs,GS.conns);
+  if(result.ok){
+    GS.score+=100+Math.floor(GS.timer*.1);
+    document.getElementById('score-disp').textContent=GS.score;
+    GS.conns.forEach(c=>c.ok=true);
+    drawTopo(); refreshMACTable();
+    addAlert('ok','&#10003; RED VALIDADA EXITOSAMENTE');
+    animPkts(true); showVictory(sc);
+  } else {
+    GS.conns.forEach(c=>c.err=true); drawTopo();
+    result.e.forEach(e=>addAlert('error',e));
+    addAlert('warn',`${result.e.length} error(es) encontrado(s)`);
+    animPkts(false);
+    setTimeout(()=>{GS.conns.forEach(c=>c.err=false);drawTopo();},2000);
+  }
+}
+
+function showVictory(sc){
+  document.getElementById('vic-details').innerHTML=`
+    <p class="orb" style="color:var(--green);font-size:.75rem;margin-bottom:8px">CERT: ${sc.topo}</p>
+    <p style="margin-bottom:4px">&#10003; Todos los parámetros de Capa 1 y Capa 2 validados</p>
+    <p style="margin-bottom:4px">&#10003; IEEE 802.1D · MAC Table actualizada</p>
+    <p style="margin-bottom:4px">&#11088; Puntos: <b style="color:var(--green)">${GS.score}</b></p>
+    <p style="color:#667788;font-size:.68rem;margin-top:6px">Escenario ${GS.scenario} de 3 completado</p>
+  `;
+  document.getElementById('vic').style.display='flex';
+}
+
+function closeVic(){document.getElementById('vic').style.display='none';}
+function nextScenario(){
+  closeVic();
+  if(GS.scenario<3) loadScenario(GS.scenario+1);
+  else addAlert('ok','&#127942; TODOS LOS ESCENARIOS COMPLETADOS! Eres Wireless Link Master!');
+}
+
+// ═══════════════════════════════════════════════
+// PACKET ANIMATION
+// ═══════════════════════════════════════════════
+function animPkts(ok){
+  if(!GS.conns.length) return;
+  const area=document.getElementById('topo-area');
+  const r=area.getBoundingClientRect();
+  GS.conns.forEach((cn,i)=>{
+    const d1=GS.devs.find(d=>d.id===cn.f), d2=GS.devs.find(d=>d.id===cn.t);
+    if(!d1||!d2) return;
+    setTimeout(()=>{
+      const pkt=document.createElement('div');
+      pkt.className=`pkt ${ok?'pk-g':'pk-r'}`;
+      pkt.style.cssText=`left:${d1.x*r.width}px;top:${d1.y*r.height}px;`;
+      area.appendChild(pkt);
+      const t0=Date.now();
+      (function mv(){
+        const t=Math.min(1,(Date.now()-t0)/800);
+        pkt.style.left=(d1.x*r.width+(d2.x-d1.x)*r.width*t)+'px';
+        pkt.style.top=(d1.y*r.height+(d2.y-d1.y)*r.height*t)+'px';
+        t<1?requestAnimationFrame(mv):pkt.remove();
+      })();
+    },i*110);
+  });
+}
+
+function sendTestPacket(){
+  if(!GS.conns.length){addAlert('warn','No hay conexiones para probar');return;}
+  animPkts(true);
+  addAlert('info','&#128230; Paquete de prueba enviado por todos los enlaces');
+}
+
+// ═══════════════════════════════════════════════
+// SPECTRUM ANALYZER
+// ═══════════════════════════════════════════════
+function setBand(b){
+  GS.band=b;
+  const b24=document.getElementById('btn24'), b5=document.getElementById('btn5');
+  b24.className=b==='2.4'?'btn bt':'btn';
+  b24.style=b==='2.4'?'flex:1;font-size:.55rem;padding:3px 4px':'flex:1;font-size:.55rem;padding:3px 4px;border:1px solid #223;color:#445566';
+  b5.className=b==='5'?'btn bt':'btn';
+  b5.style=b==='5'?'flex:1;font-size:.55rem;padding:3px 4px':'flex:1;font-size:.55rem;padding:3px 4px;border:1px solid #223;color:#445566';
+  drawSpectrum();
+}
+
+function drawSpectrum(){
+  const cv=document.getElementById('spec-canvas');
+  const cx=cv.getContext('2d');
+  const W=cv.width, H=cv.height;
+  cx.clearRect(0,0,W,H);
+  cx.fillStyle='#060610'; cx.fillRect(0,0,W,H);
+  // grid
+  cx.strokeStyle='#0f1520'; cx.lineWidth=1;
+  for(let i=0;i<=4;i++){const y=(i/4)*H;cx.beginPath();cx.moveTo(0,y);cx.lineTo(W,y);cx.stroke();}
+
+  const sc=SC[GS.scenario];
+  const is24=GS.band==='2.4';
+  const chs=is24?[1,2,3,4,5,6,7,8,9,10,11]:[36,40,44,48,52,56,60,64];
+  const minC=chs[0], maxC=chs[chs.length-1];
+  function c2x(c){return((c-minC)/(maxC-minC||1))*(W-20)+10;}
+  function p2y(p){return((p+100)/40)*H;}
+
+  // interference
+  sc.interference.filter(i=>is24?i.ch<=13:i.ch>13).forEach(inf=>{
+    const px=c2x(inf.ch), py=p2y(inf.p+Math.sin(GS.noiseOff+inf.ch)*.4), sp=is24?22:14;
+    const g=cx.createLinearGradient(px-sp,0,px+sp,0);
+    g.addColorStop(0,'transparent'); g.addColorStop(.5,'rgba(255,107,53,.45)'); g.addColorStop(1,'transparent');
+    cx.fillStyle=g; cx.strokeStyle='rgba(255,107,53,.7)'; cx.lineWidth=1.5;
+    cx.beginPath(); cx.moveTo(px-sp,H);
+    for(let x=px-sp;x<=px+sp;x++){const t=(x-px)/sp;cx.lineTo(x,py+(H-py)*t*t);}
+    cx.lineTo(px+sp,H); cx.closePath(); cx.fill();
+    cx.beginPath(); cx.moveTo(px-sp,H);
+    for(let x=px-sp;x<=px+sp;x++){const t=(x-px)/sp;cx.lineTo(x,py+(H-py)*t*t);}
+    cx.stroke();
+  });
+
+  // AP signals
+  GS.devs.filter(d=>['ap','router','bridge-root','bridge-nonroot','repeater'].includes(d.mode)).forEach(ap=>{
+    if(!ap.ch) return;
+    const mb=is24?ap.ch<=13:ap.ch>13;
+    if(!mb) return;
+    const px=c2x(ap.ch), py=H*.08, sp=is24?19:13;
+    const g=cx.createLinearGradient(px-sp,0,px+sp,0);
+    g.addColorStop(0,'transparent'); g.addColorStop(.5,'rgba(0,245,212,.38)'); g.addColorStop(1,'transparent');
+    cx.fillStyle=g; cx.strokeStyle='rgba(0,245,212,.85)'; cx.lineWidth=2;
+    cx.beginPath(); cx.moveTo(px-sp,H);
+    for(let x=px-sp;x<=px+sp;x++){const t=(x-px)/sp;cx.lineTo(x,py+(H-py)*t*t);}
+    cx.lineTo(px+sp,H); cx.closePath(); cx.fill();
+    cx.beginPath(); cx.moveTo(px-sp,H);
+    for(let x=px-sp;x<=px+sp;x++){const t=(x-px)/sp;cx.lineTo(x,py+(H-py)*t*t);}
+    cx.stroke();
+    cx.fillStyle='#00f5d4'; cx.font='7px Courier New';
+    cx.fillText(ap.lbl.slice(0,5),px-12,py-3);
+  });
+
+  // ch labels
+  if(is24){
+    [1,6,11].forEach(ch=>{
+      const x=c2x(ch);
+      cx.strokeStyle='#1a2a3a'; cx.lineWidth=1; cx.setLineDash([2,3]);
+      cx.beginPath(); cx.moveTo(x,0); cx.lineTo(x,H-10); cx.stroke();
+      cx.setLineDash([]);
+    });
+  }
+  // dBm scale
+  cx.fillStyle='#334455'; cx.font='6px Courier New';
+  cx.fillText('-60',2,8); cx.fillText('-80',2,H/2); cx.fillText('-100',2,H-2);
+}
+
+// ═══════════════════════════════════════════════
+// MAC TABLE
+// ═══════════════════════════════════════════════
+function refreshMACTable(){
+  const el=document.getElementById('mac-table');
+  if(!GS.conns.length){el.innerHTML='<div style="color:#334455">— Sin entradas —</div>';return;}
+  let html='<div style="color:#334455;margin-bottom:3px;border-bottom:1px solid #1a2a3a;padding-bottom:2px">MAC · BSSID · IFACE</div>';
+  const seen=new Set();
+  GS.conns.forEach(cn=>[cn.f,cn.t].forEach(id=>{
+    if(seen.has(id)) return; seen.add(id);
+    const d=GS.devs.find(d=>d.id===id);
+    if(!d) return;
+    html+=`<div style="color:var(--teal);margin-bottom:2px">${d.mac}<br><span style="color:#445566">${d.lbl}</span></div>`;
+  }));
+  el.innerHTML=html;
+}
+
+// ═══════════════════════════════════════════════
+// SCENARIO LOADER
+// ═══════════════════════════════════════════════
+function loadScenario(n){
+  GS.scenario=n; GS.conns=[]; GS.selDev=null; GS.connFrom=null;
+  const s=SC[n];
+  GS.devs=s.devs.map(d=>({...d}));
+  document.getElementById('sce-title').textContent=s.title;
+  document.getElementById('sce-desc').innerHTML=s.desc;
+  document.getElementById('obj-txt').textContent=s.obj;
+  document.getElementById('topo-badge').textContent=s.topo;
+  document.getElementById('dev-cfg').style.display='none';
+  document.getElementById('sel-name').textContent='— Selecciona un nodo —';
+  document.querySelectorAll('.stab').forEach(t=>t.classList.toggle('active',parseInt(t.dataset.s)===n));
+  document.getElementById('alerts').innerHTML=`<div class="ali card" style="color:#445566;text-align:center;border:1px dashed #1a2a3a"><div style="font-size:1.2rem;margin-bottom:3px">📡</div>Escenario ${n} cargado</div>`;
+  // reset rules
+  const rlbls=['R1: Puente ≠ AP mismo iface','R2: Solo P2P o P2MP','R3: Non-Root → Root → Non-Root','R4: 1 solo Bridge Root','R5: Distancia ≤ cobertura'];
+  [...document.getElementById('rules-panel').children].forEach((el,i)=>{
+    el.className='ri ri-n'; el.innerHTML=`&#9679; ${rlbls[i]}`;
+  });
+  // pre-wire S2
+  if(n===2){
+    GS.conns.push({f:'pcm',t:'swm',ok:false,err:false,wired:true},{f:'swm',t:'apm',ok:false,err:false,wired:true},{f:'apr',t:'swr',ok:false,err:false,wired:true},{f:'swr',t:'pcr',ok:false,err:false,wired:true});
+    addAlert('info','Cables Ethernet pre-cargados. Crea el enlace WDS Bridge entre los APs.');
+  }
+  if(n===3){
+    GS.conns.push({f:'rm',t:'az1',ok:false,err:false,wired:true},{f:'rm',t:'az2',ok:false,err:false,wired:true});
+    addAlert('warn','&#9888; 2 Bridge Root detectados en el mismo dominio → BROADCAST LOOP. ¡Corrígelo!');
+    checkRules();
+  }
+  refreshMACTable();
+  setTimeout(()=>{initTopo();drawSpectrum();},40);
+}
+
+// ═══════════════════════════════════════════════
+// TIMER
+// ═══════════════════════════════════════════════
+function startTimer(){
+  if(GS.timerInt) clearInterval(GS.timerInt);
+  GS.timerInt=setInterval(()=>{
+    GS.timer--;
+    const m=Math.floor(GS.timer/60), s=GS.timer%60;
+    document.getElementById('timer-disp').textContent=`${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+    if(GS.timer<=0){clearInterval(GS.timerInt);addAlert('error','&#9201; TIEMPO AGOTADO');}
+    if(GS.timer===60) addAlert('warn','&#9201; ¡1 minuto restante!');
+  },1000);
+}
+
+document.getElementById('btn-reset').onclick=()=>{
+  GS.timer=900; GS.score=0;
+  document.getElementById('score-disp').textContent='0';
+  clearInterval(GS.timerInt); startTimer(); loadScenario(GS.scenario);
+};
+
+// ═══════════════════════════════════════════════
+// ANIMATION LOOPS
+// ═══════════════════════════════════════════════
+function specLoop(){
+  GS.noiseOff+=0.04;
+  SC[GS.scenario].interference.forEach(i=>i.p+=Math.sin(GS.noiseOff+i.ch)*.15);
+  drawSpectrum();
+  requestAnimationFrame(specLoop);
+}
+
+function topoLoop(){
+  if(GS.conns.length>0||GS.connFrom) drawTopo();
+  requestAnimationFrame(topoLoop);
+}
+
+// ═══════════════════════════════════════════════
+// BOOT
+// ═══════════════════════════════════════════════
+window.addEventListener('load',()=>{
+  loadScenario(1);
+  startTimer();
+  specLoop();
+  topoLoop();
+});
+window.addEventListener('resize',initTopo);
+</script>
+</body>
+</html>
