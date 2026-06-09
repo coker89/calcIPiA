@@ -1,0 +1,1895 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Panel de Clase · AAY1107 · Soluciones Inalámbricas</title>
+<style>
+  :root {
+    --bg: #0a0e14;
+    --bg-grid: #0d1320;
+    --panel: #131a24;
+    --panel-2: #1a232f;
+    --panel-3: #222d3c;
+    --border: #25313f;
+    --border-soft: #1c2531;
+    --text: #e8eef5;
+    --text-2: #b6c2d2;
+    --text-3: #7a8798;
+    --text-4: #4d5868;
+    --signal: #f0b429;
+    --signal-soft: rgba(240, 180, 41, 0.15);
+    --signal-glow: rgba(240, 180, 41, 0.45);
+    --danger: #ef4444;
+    --success: #4ade80;
+    --warning: #fb923c;
+    --p1: #22d3ee; /* Topología */
+    --p2: #f0b429; /* WLC */
+    --p3: #fb7185; /* AAA */
+    --p4: #4ade80; /* Monitoreo */
+    --p1-soft: rgba(34, 211, 238, 0.12);
+    --p2-soft: rgba(240, 180, 41, 0.12);
+    --p3-soft: rgba(251, 113, 133, 0.12);
+    --p4-soft: rgba(74, 222, 128, 0.12);
+    --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", "Inter", Roboto, sans-serif;
+    --font-mono: ui-monospace, "SF Mono", "JetBrains Mono", "Cascadia Code", Menlo, Consolas, monospace;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-sans);
+    font-size: 15px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+    min-height: 100vh;
+  }
+
+  body {
+    background-image:
+      radial-gradient(circle at 20% 0%, rgba(34, 211, 238, 0.04), transparent 40%),
+      radial-gradient(circle at 80% 100%, rgba(240, 180, 41, 0.05), transparent 40%),
+      linear-gradient(var(--bg-grid) 1px, transparent 1px),
+      linear-gradient(90deg, var(--bg-grid) 1px, transparent 1px);
+    background-size: 100% 100%, 100% 100%, 48px 48px, 48px 48px;
+    background-position: 0 0, 0 0, -1px -1px, -1px -1px;
+    background-attachment: fixed;
+    padding-bottom: 140px;
+  }
+
+  /* ============== HEADER ============== */
+  header.top {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    backdrop-filter: blur(14px);
+    background: rgba(10, 14, 20, 0.85);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 28px;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+  }
+
+  .brand-mark {
+    width: 38px; height: 38px;
+    border-radius: 9px;
+    background: linear-gradient(135deg, var(--signal), #c98d0e);
+    display: grid; place-items: center;
+    box-shadow: 0 0 0 1px rgba(255,255,255,0.08) inset, 0 8px 24px -8px var(--signal-glow);
+    position: relative;
+  }
+  .brand-mark::before {
+    content: "";
+    position: absolute;
+    inset: 6px;
+    border-radius: 5px;
+    border: 1.5px solid rgba(10, 14, 20, 0.85);
+    border-top-color: transparent;
+    border-left-color: transparent;
+    transform: rotate(-45deg);
+  }
+  .brand-mark::after {
+    content: "";
+    position: absolute;
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: rgba(10, 14, 20, 0.85);
+    top: 7px; left: 7px;
+  }
+
+  .brand-text {
+    display: flex; flex-direction: column;
+    line-height: 1.2;
+  }
+  .brand-code {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-3);
+    letter-spacing: 0.12em;
+  }
+  .brand-title {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  /* timer */
+  .timer {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 6px 14px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    font-family: var(--font-mono);
+  }
+  .timer-live {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--text-4);
+    transition: background 0.3s;
+  }
+  .timer-live.running {
+    background: var(--success);
+    box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.6);
+    animation: pulse 1.6s infinite;
+  }
+  .timer-live.paused {
+    background: var(--warning);
+  }
+  @keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0.5); }
+    70% { box-shadow: 0 0 0 8px rgba(74, 222, 128, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(74, 222, 128, 0); }
+  }
+
+  .timer-display {
+    font-size: 22px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    color: var(--text);
+    min-width: 7ch;
+    text-align: center;
+  }
+  .timer-display.over {
+    color: var(--danger);
+  }
+  .timer-target {
+    font-size: 11px;
+    color: var(--text-3);
+    letter-spacing: 0.08em;
+  }
+  .timer-btns {
+    display: flex; gap: 6px;
+  }
+  .timer-btn {
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    padding: 6px 10px;
+    border-radius: 7px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    cursor: pointer;
+    transition: all 0.18s;
+    text-transform: uppercase;
+  }
+  .timer-btn:hover {
+    background: var(--panel-2);
+    color: var(--text);
+    border-color: var(--text-3);
+  }
+  .timer-btn.primary {
+    background: var(--signal);
+    color: var(--bg);
+    border-color: var(--signal);
+    font-weight: 600;
+  }
+  .timer-btn.primary:hover {
+    background: #ffc847;
+    border-color: #ffc847;
+  }
+
+  .meta {
+    text-align: right;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-3);
+    letter-spacing: 0.08em;
+  }
+  .meta strong {
+    color: var(--text-2);
+    font-weight: 500;
+  }
+
+  /* ============== MAIN ============== */
+  main {
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 36px 28px;
+  }
+
+  /* Phase header */
+  .phase-head {
+    display: flex;
+    align-items: flex-start;
+    gap: 28px;
+    margin-bottom: 28px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border-soft);
+  }
+  .phase-num {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-3);
+    letter-spacing: 0.18em;
+    padding-top: 8px;
+    white-space: nowrap;
+  }
+  .phase-num .pn {
+    color: var(--current-color, var(--signal));
+    font-size: 64px;
+    line-height: 1;
+    font-weight: 200;
+    letter-spacing: -0.02em;
+    display: block;
+    margin-bottom: 4px;
+  }
+  .phase-title-block {
+    flex: 1;
+    padding-top: 6px;
+  }
+  .phase-eyebrow {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--current-color, var(--signal));
+    letter-spacing: 0.2em;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+  .phase-title {
+    font-size: 38px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    margin-bottom: 14px;
+  }
+  .phase-meta {
+    display: flex;
+    gap: 22px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-3);
+    letter-spacing: 0.06em;
+  }
+  .phase-meta strong {
+    color: var(--text-2);
+    font-weight: 500;
+  }
+  .phase-time-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 5px 10px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-2);
+    letter-spacing: 0.08em;
+    align-self: flex-start;
+    margin-top: 6px;
+  }
+  .phase-time-tag::before {
+    content: "";
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--current-color, var(--signal));
+  }
+
+  /* Content grid */
+  .content {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+  .content.cols-2 {
+    grid-template-columns: 1fr 1fr;
+  }
+  .content.cols-2-1 {
+    grid-template-columns: 2fr 1fr;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 22px 24px;
+    position: relative;
+  }
+  .card-h {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--text-3);
+    text-transform: uppercase;
+    margin-bottom: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-h::before {
+    content: "";
+    width: 14px;
+    height: 1px;
+    background: var(--current-color, var(--signal));
+  }
+  .card-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 14px;
+    letter-spacing: -0.01em;
+  }
+  .card-body p { color: var(--text-2); margin-bottom: 10px; }
+  .card-body p:last-child { margin-bottom: 0; }
+  .card-body strong { color: var(--text); font-weight: 600; }
+
+  /* Numbered list */
+  .nlist {
+    list-style: none;
+    counter-reset: nl;
+  }
+  .nlist li {
+    counter-increment: nl;
+    padding: 12px 0 12px 44px;
+    position: relative;
+    border-bottom: 1px dashed var(--border-soft);
+    color: var(--text-2);
+  }
+  .nlist li:last-child { border-bottom: none; padding-bottom: 0; }
+  .nlist li:first-child { padding-top: 6px; }
+  .nlist li::before {
+    content: counter(nl, decimal-leading-zero);
+    position: absolute;
+    left: 0;
+    top: 12px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--current-color, var(--signal));
+    letter-spacing: 0.1em;
+    font-weight: 600;
+  }
+  .nlist li b { color: var(--text); font-weight: 600; }
+
+  /* Inline mono tags */
+  .tag {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 4px;
+    padding: 1px 7px;
+    color: var(--text-2);
+    letter-spacing: 0.04em;
+  }
+  .tag.amber { color: var(--signal); border-color: rgba(240, 180, 41, 0.3); }
+  .tag.cyan { color: var(--p1); border-color: rgba(34, 211, 238, 0.3); }
+  .tag.rose { color: var(--p3); border-color: rgba(251, 113, 133, 0.3); }
+  .tag.green { color: var(--p4); border-color: rgba(74, 222, 128, 0.3); }
+  .tag.danger { color: var(--danger); border-color: rgba(239, 68, 68, 0.3); }
+
+  /* Objective list */
+  .obj {
+    display: grid;
+    gap: 14px;
+    margin-top: 16px;
+  }
+  .obj-item {
+    display: grid;
+    grid-template-columns: 32px 1fr;
+    gap: 14px;
+    align-items: start;
+  }
+  .obj-marker {
+    width: 28px; height: 28px;
+    border-radius: 50%;
+    border: 1px solid var(--current-color, var(--signal));
+    color: var(--current-color, var(--signal));
+    display: grid;
+    place-items: center;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    font-weight: 600;
+  }
+  .obj-text { color: var(--text-2); padding-top: 4px; }
+  .obj-text b { color: var(--text); font-weight: 600; }
+
+  /* Pillar grid */
+  .pillars {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-top: 18px;
+  }
+  .pillar-card {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-top: 2px solid var(--p-color);
+    border-radius: 10px;
+    padding: 18px;
+    transition: all 0.2s;
+  }
+  .pillar-card:hover {
+    background: var(--panel-2);
+    transform: translateY(-2px);
+  }
+  .pillar-num {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.18em;
+    color: var(--p-color);
+    margin-bottom: 8px;
+  }
+  .pillar-title {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 6px;
+    letter-spacing: -0.01em;
+  }
+  .pillar-desc {
+    font-size: 13px;
+    color: var(--text-3);
+    line-height: 1.45;
+  }
+
+  /* Diagram styles */
+  .diagram {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 24px;
+    overflow: hidden;
+  }
+  .diagram svg {
+    width: 100%;
+    height: auto;
+    display: block;
+  }
+  .legend {
+    display: flex;
+    gap: 18px;
+    margin-top: 16px;
+    flex-wrap: wrap;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text-3);
+    letter-spacing: 0.05em;
+  }
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .legend-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+  }
+
+  /* Comparison table */
+  .ctable {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    font-size: 13px;
+  }
+  .ctable th {
+    text-align: left;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-3);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 500;
+  }
+  .ctable td {
+    padding: 13px 14px;
+    border-bottom: 1px solid var(--border-soft);
+    color: var(--text-2);
+    vertical-align: top;
+  }
+  .ctable tr:last-child td { border-bottom: none; }
+  .ctable td:first-child {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: 0.04em;
+    color: var(--text);
+    font-weight: 600;
+    width: 130px;
+    white-space: nowrap;
+  }
+  .ctable tr:hover td { background: rgba(255,255,255,0.02); }
+
+  /* Security timeline */
+  .sectimeline {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0;
+    position: relative;
+    margin: 20px 0;
+  }
+  .sectimeline::before {
+    content: "";
+    position: absolute;
+    top: 22px;
+    left: 5%;
+    right: 5%;
+    height: 1px;
+    background: linear-gradient(90deg, var(--danger), var(--warning), var(--p3), var(--success));
+    opacity: 0.4;
+  }
+  .secitem {
+    text-align: center;
+    position: relative;
+    padding: 0 8px;
+  }
+  .secitem-dot {
+    width: 16px; height: 16px;
+    border-radius: 50%;
+    margin: 0 auto 12px;
+    border: 3px solid var(--bg);
+    box-shadow: 0 0 0 1px var(--border);
+    position: relative;
+    background: var(--c);
+  }
+  .secitem-name {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--c);
+    margin-bottom: 4px;
+  }
+  .secitem-year {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-3);
+    letter-spacing: 0.08em;
+    margin-bottom: 8px;
+  }
+  .secitem-desc {
+    font-size: 12px;
+    color: var(--text-3);
+    line-height: 1.4;
+  }
+
+  /* Tools table */
+  .tools-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-top: 10px;
+  }
+  .tool {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 13px 15px;
+    transition: all 0.15s;
+  }
+  .tool:hover {
+    background: var(--panel-3);
+    border-color: var(--p4);
+  }
+  .tool-name {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--p4);
+    font-weight: 600;
+    margin-bottom: 4px;
+    letter-spacing: 0.02em;
+  }
+  .tool-desc {
+    font-size: 12px;
+    color: var(--text-2);
+    line-height: 1.4;
+  }
+  .tool-platform {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-3);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    padding: 1px 6px;
+    border-radius: 3px;
+    margin-left: 6px;
+    letter-spacing: 0.06em;
+    vertical-align: middle;
+  }
+
+  /* Callout */
+  .callout {
+    background: var(--current-soft, var(--signal-soft));
+    border: 1px solid transparent;
+    border-left: 3px solid var(--current-color, var(--signal));
+    border-radius: 8px;
+    padding: 14px 18px;
+    margin-top: 16px;
+    font-size: 14px;
+  }
+  .callout-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--current-color, var(--signal));
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+  .callout-text { color: var(--text-2); }
+  .callout-text b { color: var(--text); }
+
+  /* Check-for-understanding */
+  .cfu {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 20px 22px;
+    margin-top: 8px;
+  }
+  .cfu-h {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.2em;
+    color: var(--current-color, var(--signal));
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .cfu-q {
+    font-size: 16px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 14px;
+  }
+  .cfu-opts { display: grid; gap: 8px; }
+  .cfu-opt {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    padding: 11px 14px;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-size: 14px;
+    color: var(--text-2);
+    text-align: left;
+    font-family: inherit;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .cfu-opt:hover {
+    border-color: var(--current-color, var(--signal));
+    background: var(--panel-3);
+  }
+  .cfu-opt-letter {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-3);
+    letter-spacing: 0.08em;
+    width: 16px;
+  }
+  .cfu-opt.correct {
+    border-color: var(--success);
+    background: rgba(74, 222, 128, 0.08);
+    color: var(--text);
+  }
+  .cfu-opt.correct .cfu-opt-letter { color: var(--success); }
+  .cfu-opt.wrong {
+    border-color: var(--danger);
+    background: rgba(239, 68, 68, 0.06);
+    opacity: 0.7;
+  }
+  .cfu-expl {
+    margin-top: 14px;
+    padding: 12px 14px;
+    background: rgba(74, 222, 128, 0.06);
+    border-left: 2px solid var(--success);
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--text-2);
+    display: none;
+  }
+  .cfu-expl.show { display: block; }
+  .cfu-expl b { color: var(--text); }
+
+  /* CAPWAP detail box */
+  .protocol-box {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--text-2);
+    line-height: 1.7;
+    margin-top: 10px;
+  }
+  .protocol-box .pb-row {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 12px;
+    padding: 3px 0;
+  }
+  .protocol-box .pb-k {
+    color: var(--text-3);
+    letter-spacing: 0.05em;
+  }
+  .protocol-box .pb-v {
+    color: var(--text);
+  }
+  .protocol-box .pb-v .hl {
+    color: var(--signal);
+  }
+
+  /* Wrap-up 3-2-1 */
+  .wrap {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+    margin-top: 18px;
+  }
+  .wrap-card {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 18px;
+    text-align: center;
+  }
+  .wrap-num {
+    font-size: 42px;
+    font-weight: 200;
+    line-height: 1;
+    margin-bottom: 6px;
+    letter-spacing: -0.02em;
+  }
+  .wrap-label {
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: 0.18em;
+    color: var(--text-3);
+    text-transform: uppercase;
+    margin-bottom: 10px;
+  }
+  .wrap-desc {
+    font-size: 13px;
+    color: var(--text-2);
+    line-height: 1.45;
+  }
+
+  /* ============== SPECTRUM NAVIGATOR ============== */
+  nav.spectrum {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 40;
+    background: rgba(10, 14, 20, 0.94);
+    backdrop-filter: blur(14px);
+    border-top: 1px solid var(--border);
+    padding: 14px 28px 16px;
+  }
+  .spectrum-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    display: flex;
+    align-items: flex-end;
+    gap: 6px;
+    height: 96px;
+  }
+  .spec-axis {
+    position: relative;
+    flex: 1;
+    height: 100%;
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+  }
+  .channel {
+    flex: var(--w, 1);
+    background: transparent;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    height: 100%;
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    align-items: center;
+    font-family: inherit;
+    color: inherit;
+    transition: opacity 0.2s;
+    opacity: 0.55;
+  }
+  .channel:hover { opacity: 0.85; }
+  .channel.active { opacity: 1; }
+  .ch-bar {
+    width: 100%;
+    border-radius: 4px 4px 1px 1px;
+    background: linear-gradient(to top, var(--c, var(--signal)), color-mix(in srgb, var(--c, var(--signal)) 60%, transparent));
+    border-bottom: 2px solid var(--c, var(--signal));
+    position: relative;
+    transition: all 0.3s ease;
+    box-shadow: 0 0 0 0 transparent;
+  }
+  .channel.active .ch-bar {
+    box-shadow: 0 0 16px 0 color-mix(in srgb, var(--c, var(--signal)) 50%, transparent);
+  }
+  .channel.active .ch-bar::after {
+    content: "";
+    position: absolute;
+    top: -4px;
+    left: 0; right: 0;
+    height: 2px;
+    background: var(--c, var(--signal));
+    border-radius: 2px;
+    animation: blink 1.4s infinite;
+  }
+  @keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+  }
+  .ch-label {
+    position: absolute;
+    bottom: -2px;
+    left: 0; right: 0;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-3);
+    letter-spacing: 0.08em;
+    transform: translateY(100%);
+    padding-top: 4px;
+    pointer-events: none;
+  }
+  .channel.active .ch-label {
+    color: var(--c, var(--signal));
+  }
+  .ch-time {
+    position: absolute;
+    top: -18px;
+    left: 0; right: 0;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-4);
+    letter-spacing: 0.06em;
+    pointer-events: none;
+  }
+  .channel.active .ch-time {
+    color: var(--text-2);
+  }
+
+  .spec-side {
+    padding: 0 14px;
+    border-left: 1px solid var(--border);
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    min-width: 130px;
+  }
+  .spec-side-label {
+    font-family: var(--font-mono);
+    font-size: 9px;
+    color: var(--text-3);
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+  }
+  .spec-side-val {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    color: var(--text);
+    font-weight: 500;
+    letter-spacing: 0.04em;
+  }
+
+  /* Phase visibility */
+  .phase { display: none; }
+  .phase.visible {
+    display: block;
+    animation: fadeUp 0.35s ease;
+  }
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* Help text */
+  .keyhint {
+    position: fixed;
+    right: 18px;
+    top: 78px;
+    z-index: 30;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    color: var(--text-4);
+    letter-spacing: 0.08em;
+    pointer-events: none;
+  }
+  .keyhint kbd {
+    display: inline-block;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    padding: 1px 6px;
+    margin: 0 2px;
+    color: var(--text-2);
+  }
+
+  /* Responsive */
+  @media (max-width: 900px) {
+    header.top { grid-template-columns: 1fr; gap: 14px; padding: 12px 16px; }
+    .meta { display: none; }
+    main { padding: 24px 16px; }
+    .content.cols-2, .content.cols-2-1 { grid-template-columns: 1fr; }
+    .pillars { grid-template-columns: repeat(2, 1fr); }
+    .phase-head { flex-direction: column; gap: 14px; padding-bottom: 18px; }
+    .phase-num { padding-top: 0; }
+    .phase-num .pn { font-size: 44px; }
+    .phase-title { font-size: 26px; }
+    .sectimeline { grid-template-columns: 1fr; gap: 14px; }
+    .sectimeline::before { display: none; }
+    .tools-grid { grid-template-columns: 1fr; }
+    .wrap { grid-template-columns: 1fr; }
+    .ch-label { font-size: 8px; }
+    .spec-side { display: none; }
+    nav.spectrum { padding: 12px 12px 14px; }
+    .keyhint { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <div class="brand-mark"></div>
+    <div class="brand-text">
+      <span class="brand-code">AAY1107 · UNIDAD 3 · CLASE INTEGRADORA</span>
+      <span class="brand-title">Soluciones Inalámbricas: ciclo completo</span>
+    </div>
+  </div>
+
+  <div class="timer">
+    <span class="timer-live" id="liveDot"></span>
+    <div>
+      <div class="timer-display" id="timerDisp">00:00</div>
+      <div class="timer-target">/ 90:00 · <span id="phaseTarget">FASE 01</span></div>
+    </div>
+    <div class="timer-btns">
+      <button class="timer-btn primary" id="btnStart">Iniciar</button>
+      <button class="timer-btn" id="btnReset">Reset</button>
+    </div>
+  </div>
+
+  <div class="meta">
+    <div><strong>Técnicas y Administración en Monitoreo de Redes</strong></div>
+    <div>90 min · 6 fases · 1 caso conductor</div>
+  </div>
+</header>
+
+<div class="keyhint">
+  <kbd>←</kbd> <kbd>→</kbd> navegar &nbsp;·&nbsp; <kbd>Espacio</kbd> iniciar/pausar
+</div>
+
+<main>
+
+  <!-- ============ FASE 1 ============ -->
+  <section class="phase visible" id="phase-1" style="--current-color: var(--signal); --current-soft: var(--signal-soft);">
+    <div class="phase-head">
+      <div class="phase-num"><span class="pn">01</span>FASE</div>
+      <div class="phase-title-block">
+        <div class="phase-eyebrow">Activación · gancho del caso</div>
+        <h1 class="phase-title">El caso NetSur</h1>
+        <div class="phase-meta">
+          <span><strong>Duración</strong> 8 min</span>
+          <span><strong>Modalidad</strong> Plenario</span>
+          <span><strong>Recursos</strong> Pizarra + este panel</span>
+        </div>
+      </div>
+      <div class="phase-time-tag">00:00 → 08:00</div>
+    </div>
+
+    <div class="content cols-2-1">
+      <div class="card">
+        <div class="card-h">Escenario</div>
+        <h3 class="card-title">"NetSur" — sucursal de retail con dos locales contiguos</h3>
+        <div class="card-body">
+          <p>NetSur abrió un segundo local pegado al original. Después de una semana, llegan tres tickets recurrentes:</p>
+          <ul class="nlist" style="margin-top: 10px;">
+            <li>"El WiFi del local 2 se cae en horario peak". <span class="tag">cobertura</span> <span class="tag">interferencia</span></li>
+            <li>"Los clientes invitados no logran navegar tras conectarse al SSID guest". <span class="tag">autenticación</span> <span class="tag">captive portal</span></li>
+            <li>"Una videollamada con la central se entrecorta entre las 14:00 y 15:00". <span class="tag">QoS</span> <span class="tag">monitoreo</span></li>
+          </ul>
+          <div class="callout">
+            <div class="callout-label">Pregunta gancho</div>
+            <div class="callout-text">¿Por dónde empezarías? ¿Hay un orden correcto, o se va atacando cada queja por separado?</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">Objetivos de aprendizaje</div>
+        <h3 class="card-title">Al terminar serás capaz de…</h3>
+        <div class="obj">
+          <div class="obj-item">
+            <div class="obj-marker">01</div>
+            <div class="obj-text"><b>Diagnosticar</b> la topología WiFi adecuada (BSS, ESS, WDS) según el caso.</div>
+          </div>
+          <div class="obj-item">
+            <div class="obj-marker">02</div>
+            <div class="obj-text"><b>Implementar</b> una solución con WLC y entender el rol de CAPWAP/DTLS.</div>
+          </div>
+          <div class="obj-item">
+            <div class="obj-marker">03</div>
+            <div class="obj-text"><b>Asegurar</b> el acceso usando WPA2-Enterprise con 802.1X y RADIUS.</div>
+          </div>
+          <div class="obj-item">
+            <div class="obj-marker">04</div>
+            <div class="obj-text"><b>Monitorear</b> el resultado con analizadores WiFi y site survey.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 22px;">
+      <div class="card-h">Hoja de ruta · los 4 pilares</div>
+      <h3 class="card-title">El ciclo profesional de una solución WiFi</h3>
+      <div class="pillars">
+        <div class="pillar-card" style="--p-color: var(--p1);">
+          <div class="pillar-num">PILAR 01</div>
+          <div class="pillar-title">Diagnóstico</div>
+          <div class="pillar-desc">Topología, BSS/ESS, WDS, bandas ISM, reglas de diseño.</div>
+        </div>
+        <div class="pillar-card" style="--p-color: var(--p2);">
+          <div class="pillar-num">PILAR 02</div>
+          <div class="pillar-title">Implementación</div>
+          <div class="pillar-desc">Router SOHO vs WLC + LAPs, CAPWAP, DTLS, NAT/QoS.</div>
+        </div>
+        <div class="pillar-card" style="--p-color: var(--p3);">
+          <div class="pillar-num">PILAR 03</div>
+          <div class="pillar-title">Seguridad</div>
+          <div class="pillar-desc">WEP→WPA2→WPA3, 802.1X, RADIUS, AAA, Captive Portal.</div>
+        </div>
+        <div class="pillar-card" style="--p-color: var(--p4);">
+          <div class="pillar-num">PILAR 04</div>
+          <div class="pillar-title">Monitoreo</div>
+          <div class="pillar-desc">Analizadores, heat maps, site survey, KPIs operativos.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FASE 2 ============ -->
+  <section class="phase" id="phase-2" style="--current-color: var(--p1); --current-soft: var(--p1-soft);">
+    <div class="phase-head">
+      <div class="phase-num"><span class="pn">02</span>FASE</div>
+      <div class="phase-title-block">
+        <div class="phase-eyebrow">Pilar 1 · Topología y diagnóstico</div>
+        <h1 class="phase-title">Mapear la arquitectura WiFi</h1>
+        <div class="phase-meta">
+          <span><strong>Duración</strong> 17 min</span>
+          <span><strong>Modalidad</strong> Exposición + diagrama</span>
+          <span><strong>Apoyo</strong> PPT 3.1.1</span>
+        </div>
+      </div>
+      <div class="phase-time-tag">08:00 → 25:00</div>
+    </div>
+
+    <div class="content cols-2-1">
+      <div class="diagram">
+        <div class="card-h">Topologías 802.11</div>
+        <svg viewBox="0 0 640 320" xmlns="http://www.w3.org/2000/svg" style="font-family: var(--font-mono); font-size: 10px;">
+          <!-- IBSS -->
+          <g transform="translate(20, 30)">
+            <text x="80" y="0" fill="#7a8798" font-size="9" letter-spacing="2" text-anchor="middle">IBSS · AD-HOC</text>
+            <circle cx="40" cy="60" r="14" fill="none" stroke="#22d3ee" stroke-width="1.5"/>
+            <text x="40" y="64" fill="#22d3ee" text-anchor="middle" font-size="9">PC</text>
+            <circle cx="120" cy="40" r="14" fill="none" stroke="#22d3ee" stroke-width="1.5"/>
+            <text x="120" y="44" fill="#22d3ee" text-anchor="middle" font-size="9">PC</text>
+            <circle cx="120" cy="100" r="14" fill="none" stroke="#22d3ee" stroke-width="1.5"/>
+            <text x="120" y="104" fill="#22d3ee" text-anchor="middle" font-size="9">PC</text>
+            <line x1="54" y1="55" x2="106" y2="44" stroke="#22d3ee" stroke-width="1" stroke-dasharray="3 2" opacity="0.6"/>
+            <line x1="54" y1="65" x2="106" y2="96" stroke="#22d3ee" stroke-width="1" stroke-dasharray="3 2" opacity="0.6"/>
+            <line x1="120" y1="54" x2="120" y2="86" stroke="#22d3ee" stroke-width="1" stroke-dasharray="3 2" opacity="0.6"/>
+            <text x="80" y="140" fill="#b6c2d2" text-anchor="middle" font-size="9">Sin AP · peer-to-peer</text>
+          </g>
+
+          <!-- BSS -->
+          <g transform="translate(220, 30)">
+            <text x="100" y="0" fill="#7a8798" font-size="9" letter-spacing="2" text-anchor="middle">BSS · INFRAESTRUCTURA</text>
+            <rect x="86" y="50" width="28" height="20" fill="#0d1320" stroke="#22d3ee" stroke-width="1.5" rx="2"/>
+            <text x="100" y="64" fill="#22d3ee" text-anchor="middle" font-size="8">AP</text>
+            <!-- radio waves -->
+            <circle cx="100" cy="60" r="22" fill="none" stroke="#22d3ee" stroke-width="0.5" opacity="0.4"/>
+            <circle cx="100" cy="60" r="35" fill="none" stroke="#22d3ee" stroke-width="0.5" opacity="0.25"/>
+            <circle cx="40" cy="100" r="11" fill="none" stroke="#22d3ee" stroke-width="1.2"/>
+            <text x="40" y="103" fill="#22d3ee" text-anchor="middle" font-size="8">PC</text>
+            <circle cx="160" cy="100" r="11" fill="none" stroke="#22d3ee" stroke-width="1.2"/>
+            <text x="160" y="103" fill="#22d3ee" text-anchor="middle" font-size="8">PC</text>
+            <circle cx="100" cy="115" r="11" fill="none" stroke="#22d3ee" stroke-width="1.2"/>
+            <text x="100" y="118" fill="#22d3ee" text-anchor="middle" font-size="8">PC</text>
+            <line x1="92" y1="68" x2="48" y2="93" stroke="#22d3ee" stroke-width="0.8" opacity="0.7"/>
+            <line x1="108" y1="68" x2="152" y2="93" stroke="#22d3ee" stroke-width="0.8" opacity="0.7"/>
+            <line x1="100" y1="72" x2="100" y2="104" stroke="#22d3ee" stroke-width="0.8" opacity="0.7"/>
+            <text x="100" y="140" fill="#b6c2d2" text-anchor="middle" font-size="9">1 AP · BSSID = MAC del AP</text>
+          </g>
+
+          <!-- ESS -->
+          <g transform="translate(420, 30)">
+            <text x="100" y="0" fill="#7a8798" font-size="9" letter-spacing="2" text-anchor="middle">ESS · EXTENDIDO</text>
+            <line x1="20" y1="60" x2="180" y2="60" stroke="#7a8798" stroke-width="0.5" stroke-dasharray="2 2"/>
+            <text x="20" y="56" fill="#7a8798" font-size="8">DS</text>
+            <rect x="36" y="50" width="20" height="14" fill="#0d1320" stroke="#22d3ee" stroke-width="1.2" rx="2"/>
+            <text x="46" y="60" fill="#22d3ee" text-anchor="middle" font-size="7">AP1</text>
+            <rect x="90" y="50" width="20" height="14" fill="#0d1320" stroke="#22d3ee" stroke-width="1.2" rx="2"/>
+            <text x="100" y="60" fill="#22d3ee" text-anchor="middle" font-size="7">AP2</text>
+            <rect x="144" y="50" width="20" height="14" fill="#0d1320" stroke="#22d3ee" stroke-width="1.2" rx="2"/>
+            <text x="154" y="60" fill="#22d3ee" text-anchor="middle" font-size="7">AP3</text>
+            <circle cx="46" cy="62" r="20" fill="none" stroke="#22d3ee" stroke-width="0.5" opacity="0.3"/>
+            <circle cx="100" cy="62" r="20" fill="none" stroke="#22d3ee" stroke-width="0.5" opacity="0.3"/>
+            <circle cx="154" cy="62" r="20" fill="none" stroke="#22d3ee" stroke-width="0.5" opacity="0.3"/>
+            <circle cx="30" cy="105" r="9" fill="none" stroke="#22d3ee" stroke-width="1"/>
+            <text x="30" y="108" fill="#22d3ee" text-anchor="middle" font-size="7">PC</text>
+            <circle cx="100" cy="115" r="9" fill="none" stroke="#22d3ee" stroke-width="1"/>
+            <text x="100" y="118" fill="#22d3ee" text-anchor="middle" font-size="7">PC</text>
+            <circle cx="170" cy="105" r="9" fill="none" stroke="#22d3ee" stroke-width="1"/>
+            <text x="170" y="108" fill="#22d3ee" text-anchor="middle" font-size="7">PC</text>
+            <text x="100" y="140" fill="#b6c2d2" text-anchor="middle" font-size="9">N APs · mismo ESSID · roaming</text>
+          </g>
+
+          <!-- Key comparison row -->
+          <g transform="translate(20, 200)">
+            <line x1="0" y1="0" x2="600" y2="0" stroke="#25313f" stroke-width="0.5"/>
+            <text x="0" y="20" fill="#7a8798" font-size="9" letter-spacing="1.5">BSSID</text>
+            <text x="0" y="36" fill="#e8eef5" font-size="11" font-family="monospace">00:02:a4:b2:de:56</text>
+            <text x="0" y="52" fill="#7a8798" font-size="9" letter-spacing="1.5">ESSID</text>
+            <text x="0" y="68" fill="#e8eef5" font-size="11" font-family="monospace">NetSur</text>
+
+            <line x1="220" y1="10" x2="220" y2="80" stroke="#25313f" stroke-width="0.5"/>
+
+            <text x="240" y="20" fill="#7a8798" font-size="9" letter-spacing="1.5">BANDAS ISM (Chile · sin concesión SUBTEL)</text>
+            <rect x="240" y="32" width="80" height="22" fill="none" stroke="#22d3ee" stroke-width="1"/>
+            <text x="280" y="46" fill="#22d3ee" text-anchor="middle" font-size="10" font-family="monospace">2.4 GHz</text>
+            <rect x="332" y="32" width="80" height="22" fill="none" stroke="#22d3ee" stroke-width="1"/>
+            <text x="372" y="46" fill="#22d3ee" text-anchor="middle" font-size="10" font-family="monospace">5 GHz</text>
+            <text x="240" y="73" fill="#7a8798" font-size="9">Industrial · Scientific · Medical</text>
+          </g>
+        </svg>
+        <div class="legend">
+          <div class="legend-item"><span class="legend-dot" style="background: var(--p1);"></span> Capa 2 inalámbrica</div>
+          <div class="legend-item"><span class="legend-dot" style="background: transparent; border: 1px solid var(--p1);"></span> Estación / cliente</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">Conceptos clave</div>
+        <div class="card-body">
+          <p><b>IBSS</b> <span class="tag cyan">ad-hoc</span> Modo punto a punto entre estaciones sin AP. Útil para compartir conexión rápida; no escala.</p>
+          <p><b>BSS</b> <span class="tag cyan">infraestructura</span> Un AP distribuye en estrella hacia hosts. El <b>BSSID</b> es la MAC del AP.</p>
+          <p><b>ESS</b> <span class="tag cyan">extendido</span> Múltiples APs comparten <b>ESSID</b> y se interconectan vía DS (cableado o WDS).</p>
+          <p><b>WDS</b> <span class="tag cyan">802.11</span> Sistema de distribución inalámbrico — opera en <b>Repetidor</b> o <b>Bridge</b>.</p>
+          <div class="callout" style="margin-top: 14px;">
+            <div class="callout-label">Para NetSur</div>
+            <div class="callout-text">Dos locales contiguos sin pasar cable entre ellos → candidato perfecto para un <b>WDS Bridge punto a punto</b>, o bien un <b>ESS</b> si ya tenemos cableado.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 22px;">
+      <div class="card-h">Bridges inalámbricos · reglas de diseño</div>
+      <div class="content cols-2">
+        <div>
+          <table class="ctable">
+            <tr><th>Tipo</th><th>Aplicación</th></tr>
+            <tr><td>Punto a punto</td><td>Enlace entre dos sitios (ej. local 1 ↔ local 2 de NetSur)</td></tr>
+            <tr><td>P. a múltiples</td><td>Una raíz alimenta varios sitios remotos</td></tr>
+          </table>
+        </div>
+        <div>
+          <ul class="nlist" style="font-size: 13px;">
+            <li>Un puente <b>no</b> sirve como AP, y viceversa (aunque convivan en un mismo equipo físico).</li>
+            <li>Solo existen dos topologías: <b>P2P</b> y <b>P2MP</b>.</li>
+            <li>El tráfico entre redes pasa por el puente <b>raíz</b>.</li>
+            <li>Solo puede haber <b>un puente raíz</b> por dominio.</li>
+            <li>Verificar que el diseño cubra la <b>distancia</b> requerida.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="cfu">
+      <div class="cfu-h">Chequeo rápido · 30 segundos</div>
+      <div class="cfu-q">El local 1 y el local 2 de NetSur están a 80 m, separados por un patio sin cableado. Queremos extender la red. ¿Qué configuración aplica?</div>
+      <div class="cfu-opts" data-correct="b">
+        <button class="cfu-opt"><span class="cfu-opt-letter">A</span> Dos APs autónomos con el mismo SSID, cada uno con su propia salida a Internet</button>
+        <button class="cfu-opt"><span class="cfu-opt-letter">B</span> WDS Bridge punto a punto entre dos APs, uno como raíz</button>
+        <button class="cfu-opt"><span class="cfu-opt-letter">C</span> Un repetidor WiFi en el patio sin AP raíz</button>
+        <button class="cfu-opt"><span class="cfu-opt-letter">D</span> IBSS entre los PCs de ambos locales</button>
+      </div>
+      <div class="cfu-expl">
+        <b>Correcto: B.</b> WDS Bridge es el caso de uso clásico para enlace de capa 2 entre dos sitios sin cable troncal. Un AP queda como raíz; el otro como no-raíz. El SSID, canal y clave deben coincidir.
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FASE 3 ============ -->
+  <section class="phase" id="phase-3" style="--current-color: var(--p2); --current-soft: var(--p2-soft);">
+    <div class="phase-head">
+      <div class="phase-num"><span class="pn">03</span>FASE</div>
+      <div class="phase-title-block">
+        <div class="phase-eyebrow">Pilar 2 · Implementación con WLC</div>
+        <h1 class="phase-title">Del router SOHO al controlador</h1>
+        <div class="phase-meta">
+          <span><strong>Duración</strong> 20 min</span>
+          <span><strong>Modalidad</strong> Exposición + comparativa</span>
+          <span><strong>Apoyo</strong> PPT 3.2.1</span>
+        </div>
+      </div>
+      <div class="phase-time-tag">25:00 → 45:00</div>
+    </div>
+
+    <div class="content cols-2">
+      <div class="card">
+        <div class="card-h">Router inalámbrico SOHO</div>
+        <h3 class="card-title">Para hogar y PYMEs pequeñas</h3>
+        <div class="card-body">
+          <p>Equipo integrado: switch + WAN + AP. Funciones típicas:</p>
+          <ul class="nlist" style="margin-top: 10px;">
+            <li><b>NAT IPv4</b> traduce la dirección pública (ej. <span class="tag">209.165.201.11</span>) a la LAN privada (<span class="tag">10.10.10.0/24</span>).</li>
+            <li><b>QoS</b> prioriza voz/video sobre tráfico no sensible al retardo.</li>
+            <li><b>Reenvío de puertos</b> abre puertos específicos para apps externas.</li>
+            <li><b>WPA2-PSK</b> típicamente; algunos admiten Enterprise.</li>
+          </ul>
+          <div class="callout" style="margin-top: 14px;">
+            <div class="callout-label">Límite del modelo SOHO</div>
+            <div class="callout-text">Cada AP se configura por separado. Sin movilidad nativa entre APs. No escala más allá de 3–5 puntos.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">WLC + Lightweight APs</div>
+        <h3 class="card-title">Para infraestructura empresarial</h3>
+        <div class="card-body">
+          <p>Un <b>WLC</b> (Wireless LAN Controller) administra múltiples <b>LAPs</b> que dependen de él. Beneficios:</p>
+          <ul class="nlist" style="margin-top: 10px;">
+            <li>Configuración <b>centralizada</b> — cada LAP nuevo se auto-configura.</li>
+            <li>Movilidad y <b>roaming</b> entre APs gestionado por el WLC.</li>
+            <li>Panel <b>Network Summary</b> con APs, clientes y APs dudosos.</li>
+            <li>Integración con <b>SNMP</b> (traps) y <b>RADIUS</b> (AAA).</li>
+          </ul>
+          <div class="callout" style="margin-top: 14px;">
+            <div class="callout-label">Identificación del AP</div>
+            <div class="callout-text">El WLC sabe a qué puerto del switch está conectado cada LAP gracias a <b>CDP</b> (Cisco Discovery Protocol).</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 22px;">
+      <div class="card-h">El protocolo que lo conecta todo · CAPWAP</div>
+      <h3 class="card-title">Control y reenvío entre LAP ↔ WLC</h3>
+      <div class="content cols-2">
+        <div class="card-body">
+          <p><b>CAPWAP</b> (Control And Provisioning of Wireless Access Points) es un protocolo estándar IEEE que permite al WLC administrar múltiples APs y WLANs. Está basado en LWAPP, pero suma seguridad mediante DTLS.</p>
+          <p>CAPWAP es responsable de la <b>encapsulación</b> y el <b>reenvío</b> del tráfico del cliente entre LAP y WLC.</p>
+        </div>
+        <div class="protocol-box">
+          <div class="pb-row"><span class="pb-k">Tipo</span><span class="pb-v">Túnel UDP</span></div>
+          <div class="pb-row"><span class="pb-k">Puerto control</span><span class="pb-v"><span class="hl">UDP 5246</span></span></div>
+          <div class="pb-row"><span class="pb-k">Puerto datos</span><span class="pb-v"><span class="hl">UDP 5247</span></span></div>
+          <div class="pb-row"><span class="pb-k">IPv4</span><span class="pb-v">Protocolo IP <span class="hl">17</span></span></div>
+          <div class="pb-row"><span class="pb-k">IPv6</span><span class="pb-v">Protocolo IP <span class="hl">136</span></span></div>
+          <div class="pb-row"><span class="pb-k">Cifrado</span><span class="pb-v">DTLS · control siempre / datos opcional</span></div>
+        </div>
+      </div>
+      <div class="callout" style="margin-top: 16px;">
+        <div class="callout-label">DTLS — Datagram Transport Layer Security</div>
+        <div class="callout-text">Cifra el <b>canal de control</b> CAPWAP por defecto, protegiéndolo de ataques MITM. El <b>cifrado de datos</b> está deshabilitado por defecto y requiere una licencia DTLS en el WLC para activarse en cada AP.</div>
+      </div>
+    </div>
+
+    <div class="cfu">
+      <div class="cfu-h">Chequeo rápido · 30 segundos</div>
+      <div class="cfu-q">Un LAP recién conectado al switch no logra registrarse con el WLC. El switch confirma enlace físico OK. ¿Qué puertos UDP debes verificar primero entre el LAP y el WLC?</div>
+      <div class="cfu-opts" data-correct="c">
+        <button class="cfu-opt"><span class="cfu-opt-letter">A</span> TCP 80 y 443</button>
+        <button class="cfu-opt"><span class="cfu-opt-letter">B</span> UDP 161 y 162</button>
+        <button class="cfu-opt"><span class="cfu-opt-letter">C</span> UDP 5246 (control) y UDP 5247 (datos)</button>
+        <button class="cfu-opt"><span class="cfu-opt-letter">D</span> TCP 22 y UDP 514</button>
+      </div>
+      <div class="cfu-expl">
+        <b>Correcto: C.</b> CAPWAP utiliza UDP 5246 para el plano de control y UDP 5247 para el plano de datos. La opción B (UDP 161/162) corresponde a SNMP, también relevante para monitoreo pero no para el registro inicial del LAP.
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FASE 4 ============ -->
+  <section class="phase" id="phase-4" style="--current-color: var(--p3); --current-soft: var(--p3-soft);">
+    <div class="phase-head">
+      <div class="phase-num"><span class="pn">04</span>FASE</div>
+      <div class="phase-title-block">
+        <div class="phase-eyebrow">Pilar 3 · Seguridad y AAA</div>
+        <h1 class="phase-title">Quién entra, qué puede hacer, qué quedó registrado</h1>
+        <div class="phase-meta">
+          <span><strong>Duración</strong> 20 min</span>
+          <span><strong>Modalidad</strong> Línea de tiempo + flujo 802.1X</span>
+          <span><strong>Apoyo</strong> PPT 3.3.1</span>
+        </div>
+      </div>
+      <div class="phase-time-tag">45:00 → 65:00</div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">Evolución de la seguridad WiFi</div>
+      <div class="sectimeline">
+        <div class="secitem" style="--c: var(--danger);">
+          <div class="secitem-dot"></div>
+          <div class="secitem-name">WEP</div>
+          <div class="secitem-year">IEEE 802.11 · 64/128 bit</div>
+          <div class="secitem-desc">Clave estática. Polinomios débiles. <b>Vulnerable</b> — descifrable en minutos.</div>
+        </div>
+        <div class="secitem" style="--c: var(--warning);">
+          <div class="secitem-dot"></div>
+          <div class="secitem-name">WPA</div>
+          <div class="secitem-year">Industria · TKIP / AES</div>
+          <div class="secitem-desc">Respuesta de los fabricantes a WEP. Cifrado dinámico con TKIP.</div>
+        </div>
+        <div class="secitem" style="--c: var(--p3);">
+          <div class="secitem-dot"></div>
+          <div class="secitem-name">WPA2</div>
+          <div class="secitem-year">802.11i · TKIP+AES</div>
+          <div class="secitem-desc">Respuesta IEEE. Soporta TKIP, AES o ambos. Estándar empresarial.</div>
+        </div>
+        <div class="secitem" style="--c: var(--success);">
+          <div class="secitem-dot"></div>
+          <div class="secitem-name">WPA3</div>
+          <div class="secitem-year">Actual · SAE / PMF</div>
+          <div class="secitem-desc">Forward secrecy, protección contra fuerza bruta, frames de gestión protegidos.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content cols-2-1" style="margin-top: 22px;">
+      <div class="diagram">
+        <div class="card-h">Flujo 802.1X · 3 entes</div>
+        <svg viewBox="0 0 600 240" xmlns="http://www.w3.org/2000/svg">
+          <!-- Suplicante -->
+          <g transform="translate(20, 50)">
+            <rect x="0" y="0" width="120" height="80" fill="#1a232f" stroke="#fb7185" stroke-width="1.5" rx="6"/>
+            <text x="60" y="22" fill="#fb7185" text-anchor="middle" font-size="10" font-family="monospace" letter-spacing="1.5">SUPLICANTE</text>
+            <text x="60" y="42" fill="#e8eef5" text-anchor="middle" font-size="11">Cliente WiFi</text>
+            <text x="60" y="58" fill="#7a8798" text-anchor="middle" font-size="9">EAPoL / EAPoW</text>
+            <text x="60" y="72" fill="#7a8798" text-anchor="middle" font-size="9">user + password</text>
+          </g>
+          <!-- Autenticador -->
+          <g transform="translate(240, 50)">
+            <rect x="0" y="0" width="120" height="80" fill="#1a232f" stroke="#fb7185" stroke-width="1.5" rx="6"/>
+            <text x="60" y="22" fill="#fb7185" text-anchor="middle" font-size="10" font-family="monospace" letter-spacing="1.5">AUTENTICADOR</text>
+            <text x="60" y="42" fill="#e8eef5" text-anchor="middle" font-size="11">AP / WLC</text>
+            <text x="60" y="58" fill="#7a8798" text-anchor="middle" font-size="9">proxy + puerto</text>
+            <text x="60" y="72" fill="#7a8798" text-anchor="middle" font-size="9">virtual 802.1X</text>
+          </g>
+          <!-- Servidor -->
+          <g transform="translate(460, 50)">
+            <rect x="0" y="0" width="120" height="80" fill="#1a232f" stroke="#fb7185" stroke-width="1.5" rx="6"/>
+            <text x="60" y="22" fill="#fb7185" text-anchor="middle" font-size="10" font-family="monospace" letter-spacing="1.5">SERVIDOR</text>
+            <text x="60" y="42" fill="#e8eef5" text-anchor="middle" font-size="11">RADIUS / AAA</text>
+            <text x="60" y="58" fill="#7a8798" text-anchor="middle" font-size="9">FreeRADIUS</text>
+            <text x="60" y="72" fill="#7a8798" text-anchor="middle" font-size="9">RFC 2865</text>
+          </g>
+
+          <!-- arrows -->
+          <defs>
+            <marker id="arrow" markerWidth="8" markerHeight="8" refX="7" refY="4" orient="auto">
+              <polygon points="0 0, 8 4, 0 8" fill="#fb7185"/>
+            </marker>
+            <marker id="arrowback" markerWidth="8" markerHeight="8" refX="1" refY="4" orient="auto">
+              <polygon points="0 4, 8 0, 8 8" fill="#7a8798"/>
+            </marker>
+          </defs>
+
+          <line x1="140" y1="80" x2="234" y2="80" stroke="#fb7185" stroke-width="1.2" marker-end="url(#arrow)"/>
+          <text x="187" y="74" fill="#fb7185" text-anchor="middle" font-size="9" font-family="monospace">EAP</text>
+          <line x1="360" y1="80" x2="454" y2="80" stroke="#fb7185" stroke-width="1.2" marker-end="url(#arrow)"/>
+          <text x="407" y="74" fill="#fb7185" text-anchor="middle" font-size="9" font-family="monospace">RADIUS</text>
+
+          <line x1="234" y1="105" x2="140" y2="105" stroke="#7a8798" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#arrowback)"/>
+          <text x="187" y="120" fill="#7a8798" text-anchor="middle" font-size="9" font-family="monospace">accept/reject</text>
+          <line x1="454" y1="105" x2="360" y2="105" stroke="#7a8798" stroke-width="1" stroke-dasharray="3 2" marker-end="url(#arrowback)"/>
+          <text x="407" y="120" fill="#7a8798" text-anchor="middle" font-size="9" font-family="monospace">accept/reject</text>
+
+          <!-- AAA legend -->
+          <g transform="translate(20, 180)">
+            <text x="0" y="0" fill="#7a8798" font-size="9" letter-spacing="1.5">AAA · LO QUE GESTIONA EL SERVIDOR RADIUS</text>
+            <rect x="0" y="14" width="170" height="44" fill="none" stroke="#fb7185" stroke-width="0.5" rx="4"/>
+            <text x="85" y="30" fill="#fb7185" text-anchor="middle" font-size="10" font-family="monospace">AUTHENTICATION</text>
+            <text x="85" y="48" fill="#7a8798" text-anchor="middle" font-size="9">¿quién eres?</text>
+            <rect x="190" y="14" width="170" height="44" fill="none" stroke="#fb7185" stroke-width="0.5" rx="4"/>
+            <text x="275" y="30" fill="#fb7185" text-anchor="middle" font-size="10" font-family="monospace">AUTHORIZATION</text>
+            <text x="275" y="48" fill="#7a8798" text-anchor="middle" font-size="9">¿qué puedes hacer?</text>
+            <rect x="380" y="14" width="170" height="44" fill="none" stroke="#fb7185" stroke-width="0.5" rx="4"/>
+            <text x="465" y="30" fill="#fb7185" text-anchor="middle" font-size="10" font-family="monospace">ACCOUNTING</text>
+            <text x="465" y="48" fill="#7a8798" text-anchor="middle" font-size="9">¿qué quedó registrado?</text>
+          </g>
+        </svg>
+      </div>
+
+      <div class="card">
+        <div class="card-h">Configuración rápida</div>
+        <h3 class="card-title">WPA2-Enterprise en el WLC</h3>
+        <div class="card-body">
+          <ul class="nlist" style="font-size: 13px;">
+            <li>En el WLC: <b>SECURITY → RADIUS → Authentication → New</b>.</li>
+            <li>Agregar la IP del servidor RADIUS y el <b>secreto compartido</b> (entre WLC y RADIUS, no del usuario).</li>
+            <li>Crear la WLAN con <b>WPA2-Enterprise + AES</b>.</li>
+            <li>Apuntar la WLAN al servidor RADIUS configurado.</li>
+            <li>En el cliente Windows: activar servicio EAP. En Android: seleccionar EAP al conectar.</li>
+          </ul>
+          <div class="callout" style="margin-top: 14px;">
+            <div class="callout-label">Para NetSur · invitados</div>
+            <div class="callout-text">Para el SSID guest, usar <b>Captive Portal</b> (intercepta HTTP, exige user/pass o términos de uso). Para el SSID corporativo, <b>WPA2-Enterprise + RADIUS</b>.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="cfu">
+      <div class="cfu-h">Chequeo rápido · 30 segundos</div>
+      <div class="cfu-q">En NetSur quieres que cada empleado se autentique con su propio usuario/contraseña y que las conexiones queden registradas para auditoría. ¿Qué combinación implementas?</div>
+      <div class="cfu-opts" data-correct="d">
+        <button class="cfu-opt"><span class="cfu-opt-letter">A</span> WEP de 128 bits con MAC filtering</button>
+        <button class="cfu-opt"><span class="cfu-opt-letter">B</span> WPA2-PSK con la misma contraseña para todos</button>
+        <button class="cfu-opt"><span class="cfu-opt-letter">C</span> Captive Portal en el AP</button>
+        <button class="cfu-opt"><span class="cfu-opt-letter">D</span> WPA2-Enterprise con 802.1X y servidor RADIUS</button>
+      </div>
+      <div class="cfu-expl">
+        <b>Correcto: D.</b> WPA2-Enterprise con 802.1X y RADIUS entrega los tres servicios AAA: autenticación por usuario, autorización (qué puede hacer) y accounting (registro auditable). PSK no individualiza al usuario; Captive Portal autentica pero no cifra a nivel de enlace.
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FASE 5 ============ -->
+  <section class="phase" id="phase-5" style="--current-color: var(--p4); --current-soft: var(--p4-soft);">
+    <div class="phase-head">
+      <div class="phase-num"><span class="pn">05</span>FASE</div>
+      <div class="phase-title-block">
+        <div class="phase-eyebrow">Pilar 4 · Monitoreo y site survey</div>
+        <h1 class="phase-title">Ver lo que pasa en el aire</h1>
+        <div class="phase-meta">
+          <span><strong>Duración</strong> 15 min</span>
+          <span><strong>Modalidad</strong> Demo + catálogo de herramientas</span>
+          <span><strong>Apoyo</strong> PPT 3.4.1</span>
+        </div>
+      </div>
+      <div class="phase-time-tag">65:00 → 80:00</div>
+    </div>
+
+    <div class="content cols-2-1">
+      <div class="card">
+        <div class="card-h">¿Qué se monitorea?</div>
+        <h3 class="card-title">Cinco indicadores no negociables</h3>
+        <div class="card-body">
+          <ul class="nlist">
+            <li><b>Estado del dispositivo</b> — disponibilidad del router/AP en todo momento; gatilla gestión de incidentes si cae.</li>
+            <li><b>Carga</b> — la red puede caerse no por falla sino por saturación; ayuda a planificar capacidad.</li>
+            <li><b>Tráfico</b> — paquetes por AP, ancho de banda usado, distribución por tipo.</li>
+            <li><b>Intensidad de señal (RSSI)</b> — detecta puntos débiles que percibe el usuario como "WiFi malo".</li>
+            <li><b>Equipos conectados</b> — quién y cuándo; permite detectar accesos no autorizados.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="diagram">
+        <div class="card-h">Mapa de calor + site survey</div>
+        <svg viewBox="0 0 360 240" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <radialGradient id="ap1grad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#4ade80" stop-opacity="0.6"/>
+              <stop offset="50%" stop-color="#f0b429" stop-opacity="0.35"/>
+              <stop offset="100%" stop-color="#ef4444" stop-opacity="0.1"/>
+            </radialGradient>
+            <radialGradient id="ap2grad" cx="50%" cy="50%" r="50%">
+              <stop offset="0%" stop-color="#4ade80" stop-opacity="0.6"/>
+              <stop offset="50%" stop-color="#f0b429" stop-opacity="0.35"/>
+              <stop offset="100%" stop-color="#ef4444" stop-opacity="0.1"/>
+            </radialGradient>
+          </defs>
+
+          <!-- floor plan -->
+          <rect x="20" y="20" width="320" height="200" fill="none" stroke="#25313f" stroke-width="1.5" rx="2"/>
+          <line x1="180" y1="20" x2="180" y2="220" stroke="#25313f" stroke-width="1.5"/>
+          <line x1="180" y1="120" x2="200" y2="120" stroke="#25313f" stroke-width="1.5"/>
+          <text x="100" y="36" fill="#7a8798" font-size="9" letter-spacing="1.5" text-anchor="middle">LOCAL 1</text>
+          <text x="260" y="36" fill="#7a8798" font-size="9" letter-spacing="1.5" text-anchor="middle">LOCAL 2</text>
+
+          <!-- AP1 -->
+          <circle cx="100" cy="120" r="100" fill="url(#ap1grad)"/>
+          <rect x="92" y="112" width="16" height="16" fill="#0a0e14" stroke="#4ade80" stroke-width="1.5" rx="2"/>
+          <text x="100" y="124" fill="#4ade80" text-anchor="middle" font-size="9" font-family="monospace">AP1</text>
+
+          <!-- AP2 -->
+          <circle cx="260" cy="120" r="90" fill="url(#ap2grad)"/>
+          <rect x="252" y="112" width="16" height="16" fill="#0a0e14" stroke="#4ade80" stroke-width="1.5" rx="2"/>
+          <text x="260" y="124" fill="#4ade80" text-anchor="middle" font-size="9" font-family="monospace">AP2</text>
+
+          <!-- dead zones markers -->
+          <circle cx="40" cy="60" r="5" fill="#ef4444" opacity="0.7"/>
+          <text x="50" y="64" fill="#ef4444" font-size="9" font-family="monospace">RSSI bajo</text>
+          <circle cx="320" cy="200" r="5" fill="#ef4444" opacity="0.7"/>
+        </svg>
+        <div class="legend">
+          <div class="legend-item"><span class="legend-dot" style="background: var(--success);"></span> Señal fuerte</div>
+          <div class="legend-item"><span class="legend-dot" style="background: var(--signal);"></span> Señal media</div>
+          <div class="legend-item"><span class="legend-dot" style="background: var(--danger);"></span> Sin cobertura</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 22px;">
+      <div class="card-h">Catálogo de herramientas</div>
+      <h3 class="card-title">Lo que vas a ver instalado en una empresa real</h3>
+      <div class="tools-grid">
+        <div class="tool">
+          <div class="tool-name">SolarWinds WiFi Monitor <span class="tool-platform">DESKTOP</span></div>
+          <div class="tool-desc">Parte del Network Performance Monitor. Reportes por SSID, canal, clientes, RSSI, MAC, bytes RX/TX.</div>
+        </div>
+        <div class="tool">
+          <div class="tool-name">ManageEngine OpManager <span class="tool-platform">DESKTOP</span></div>
+          <div class="tool-desc">Visibilidad en tiempo real, alertas, integración con gestión de seguridad, IPAM y storage.</div>
+        </div>
+        <div class="tool">
+          <div class="tool-name">Site24x7 <span class="tool-platform">CLOUD</span></div>
+          <div class="tool-desc">Auto-descubre WLCs y APs. +1000 plantillas de fabricantes. Alertas vía email, SMS, push.</div>
+        </div>
+        <div class="tool">
+          <div class="tool-name">NetSpot <span class="tool-platform">MAC/WIN</span></div>
+          <div class="tool-desc">Mapa de calor detallado, evaluación de interferencia WLAN, ancho de canal, MAC, RSSI.</div>
+        </div>
+        <div class="tool">
+          <div class="tool-name">Acrylic WiFi <span class="tool-platform">WINDOWS</span></div>
+          <div class="tool-desc">Análisis de seguridad y cobertura. Versión gratuita personal + Pro + Law Enforcement.</div>
+        </div>
+        <div class="tool">
+          <div class="tool-name">InSSIDer <span class="tool-platform">WINDOWS</span></div>
+          <div class="tool-desc">UI muy simple, ideal para iniciar: SSID, señal, canal, cifrado. Bajo costo.</div>
+        </div>
+        <div class="tool">
+          <div class="tool-name">WiFi Analyzer <span class="tool-platform">ANDROID</span></div>
+          <div class="tool-desc">Identifica canales saturados en tiempo real. Gráfico de RSSI por SSID en el tiempo.</div>
+        </div>
+        <div class="tool">
+          <div class="tool-name">Vistumbler / ScanFi <span class="tool-platform">WIN / ANDROID</span></div>
+          <div class="tool-desc">Escaneo rápido de redes cercanas. Útiles para diagnósticos de campo.</div>
+        </div>
+      </div>
+      <div class="callout" style="margin-top: 18px;">
+        <div class="callout-label">Site Survey</div>
+        <div class="callout-text">Es el paso <b>previo</b> a desplegar APs: define dónde, cuántos y de qué potencia. Usa estas herramientas en modo "topógrafo" caminando el sitio con un dispositivo portátil. Sin site survey, estás adivinando.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ FASE 6 ============ -->
+  <section class="phase" id="phase-6" style="--current-color: var(--signal); --current-soft: var(--signal-soft);">
+    <div class="phase-head">
+      <div class="phase-num"><span class="pn">06</span>FASE</div>
+      <div class="phase-title-block">
+        <div class="phase-eyebrow">Síntesis · resolver el caso</div>
+        <h1 class="phase-title">NetSur, los 4 pilares en acción</h1>
+        <div class="phase-meta">
+          <span><strong>Duración</strong> 10 min</span>
+          <span><strong>Modalidad</strong> Cierre + 3-2-1 + tarea</span>
+          <span><strong>Recurso</strong> Pizarra / Packet Tracer / NetForge</span>
+        </div>
+      </div>
+      <div class="phase-time-tag">80:00 → 90:00</div>
+    </div>
+
+    <div class="card">
+      <div class="card-h">Solución integrada</div>
+      <h3 class="card-title">Cómo se ven los 4 pilares aplicados a NetSur</h3>
+      <table class="ctable" style="margin-top: 8px;">
+        <tr>
+          <th style="width: 130px;">Pilar</th>
+          <th>Decisión</th>
+          <th style="width: 200px;">Herramienta / configuración</th>
+        </tr>
+        <tr>
+          <td style="color: var(--p1);">Diagnóstico</td>
+          <td>ESS con 2 APs (uno por local) más, si no hay cableado, <b>WDS Bridge P2P</b> entre ambos.</td>
+          <td><span class="tag cyan">BSSID</span> <span class="tag cyan">ESSID NetSur</span> <span class="tag cyan">5 GHz preferente</span></td>
+        </tr>
+        <tr>
+          <td style="color: var(--p2);">Implementación</td>
+          <td>WLC central + 2 LAPs. CAPWAP con DTLS en el plano de control.</td>
+          <td><span class="tag amber">UDP 5246/5247</span> <span class="tag amber">CDP</span> <span class="tag amber">SNMP traps</span></td>
+        </tr>
+        <tr>
+          <td style="color: var(--p3);">Seguridad</td>
+          <td>SSID <b>NetSur-Corp</b>: WPA2-Enterprise + RADIUS (FreeRADIUS).<br>SSID <b>NetSur-Guest</b>: Captive Portal con voucher diario.</td>
+          <td><span class="tag rose">802.1X</span> <span class="tag rose">EAP</span> <span class="tag rose">AAA</span></td>
+        </tr>
+        <tr>
+          <td style="color: var(--p4);">Monitoreo</td>
+          <td>NetSpot para site survey inicial. OpManager para monitoreo continuo con alertas.</td>
+          <td><span class="tag green">heat map</span> <span class="tag green">RSSI</span> <span class="tag green">SNMP</span></td>
+        </tr>
+      </table>
+    </div>
+
+    <div class="content cols-2" style="margin-top: 22px;">
+      <div class="card">
+        <div class="card-h">Cierre · método 3-2-1</div>
+        <h3 class="card-title">Antes de salir de la sala</h3>
+        <div class="wrap">
+          <div class="wrap-card">
+            <div class="wrap-num" style="color: var(--p1);">3</div>
+            <div class="wrap-label">Ideas claras</div>
+            <div class="wrap-desc">Tres conceptos que <b>sí</b> dominas al salir.</div>
+          </div>
+          <div class="wrap-card">
+            <div class="wrap-num" style="color: var(--signal);">2</div>
+            <div class="wrap-label">Dudas</div>
+            <div class="wrap-desc">Dos cosas que aún <b>no</b> te quedaron del todo.</div>
+          </div>
+          <div class="wrap-card">
+            <div class="wrap-num" style="color: var(--p4);">1</div>
+            <div class="wrap-label">Práctica</div>
+            <div class="wrap-desc">Una práctica que harás <b>antes de la próxima clase</b>.</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-h">Tarea · para la próxima sesión</div>
+        <h3 class="card-title">Mini-laboratorio en Packet Tracer</h3>
+        <div class="card-body">
+          <ul class="nlist">
+            <li>Levantar un <b>WLC</b> y <b>2 LAPs</b> en un escenario de dos pisos.</li>
+            <li>Configurar el WLC contra un servidor <b>RADIUS</b> (PC dedicado en la topología).</li>
+            <li>Crear dos WLANs: una <b>WPA2-Enterprise</b> y otra <b>WPA2-PSK</b> para invitados.</li>
+            <li>Verificar conectividad de un cliente WiFi y confirmar autenticación en el RADIUS.</li>
+            <li>Documentar: capturas de la página <b>Network Summary</b> del WLC y del log de RADIUS.</li>
+          </ul>
+          <div class="callout" style="margin-top: 14px;">
+            <div class="callout-label">Entrega</div>
+            <div class="callout-text">Archivo <span class="tag">.pkt</span> + informe corto (1 página) con la topología y los hallazgos. Subir al aula virtual antes de la próxima sesión.</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top: 22px; background: linear-gradient(135deg, var(--panel), var(--panel-2)); border-color: var(--signal);">
+      <div class="card-h" style="color: var(--signal);"><span style="background: var(--signal); -webkit-background-clip: text; background-clip: text; color: transparent;">▍</span> CIERRE</div>
+      <h3 class="card-title">Lo que se llevan</h3>
+      <p style="color: var(--text-2); font-size: 15px; line-height: 1.6;">
+        Una solución WiFi profesional no se diseña por capas separadas. Topología, controlador, autenticación y monitoreo son piezas del mismo ciclo. Si NetSur falla en uno solo de los pilares, el usuario percibe que "el WiFi anda mal". Tu trabajo es no dejar ningún pilar al azar.
+      </p>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============ SPECTRUM NAVIGATOR ============ -->
+<nav class="spectrum">
+  <div class="spectrum-inner">
+    <div class="spec-side">
+      <div class="spec-side-label">Banda · clase</div>
+      <div class="spec-side-val">90 min · 6 canales</div>
+    </div>
+    <div class="spec-axis" id="specAxis">
+      <button class="channel active" data-phase="1" style="--c: var(--signal); --w: 8;">
+        <span class="ch-time">8m</span>
+        <div class="ch-bar" style="height: 32%;"></div>
+        <span class="ch-label">01 · ACTIVA</span>
+      </button>
+      <button class="channel" data-phase="2" style="--c: var(--p1); --w: 17;">
+        <span class="ch-time">17m</span>
+        <div class="ch-bar" style="height: 65%;"></div>
+        <span class="ch-label">02 · TOPOL</span>
+      </button>
+      <button class="channel" data-phase="3" style="--c: var(--p2); --w: 20;">
+        <span class="ch-time">20m</span>
+        <div class="ch-bar" style="height: 80%;"></div>
+        <span class="ch-label">03 · WLC</span>
+      </button>
+      <button class="channel" data-phase="4" style="--c: var(--p3); --w: 20;">
+        <span class="ch-time">20m</span>
+        <div class="ch-bar" style="height: 80%;"></div>
+        <span class="ch-label">04 · AAA</span>
+      </button>
+      <button class="channel" data-phase="5" style="--c: var(--p4); --w: 15;">
+        <span class="ch-time">15m</span>
+        <div class="ch-bar" style="height: 60%;"></div>
+        <span class="ch-label">05 · MONIT</span>
+      </button>
+      <button class="channel" data-phase="6" style="--c: var(--signal); --w: 10;">
+        <span class="ch-time">10m</span>
+        <div class="ch-bar" style="height: 40%;"></div>
+        <span class="ch-label">06 · CIERRE</span>
+      </button>
+    </div>
+    <div class="spec-side" style="text-align: right;">
+      <div class="spec-side-label">Tema activo</div>
+      <div class="spec-side-val" id="activeLabel">Activación</div>
+    </div>
+  </div>
+</nav>
+
+<script>
+  // ============ STATE ============
+  const state = {
+    phase: 1,
+    timerStart: null,
+    timerElapsed: 0,
+    timerRunning: false,
+    timerInterval: null
+  };
+
+  const PHASES = [
+    { id: 1, name: "Activación", start: 0, end: 8 },
+    { id: 2, name: "Topología", start: 8, end: 25 },
+    { id: 3, name: "Implementación WLC", start: 25, end: 45 },
+    { id: 4, name: "Seguridad AAA", start: 45, end: 65 },
+    { id: 5, name: "Monitoreo", start: 65, end: 80 },
+    { id: 6, name: "Cierre", start: 80, end: 90 }
+  ];
+
+  const TOTAL_MIN = 90;
+
+  // ============ NAV ============
+  function showPhase(n) {
+    state.phase = n;
+    document.querySelectorAll(".phase").forEach(p => p.classList.remove("visible"));
+    document.querySelector("#phase-" + n).classList.add("visible");
+    document.querySelectorAll(".channel").forEach(c => c.classList.toggle("active", +c.dataset.phase === n));
+    const phase = PHASES.find(p => p.id === n);
+    document.getElementById("activeLabel").textContent = phase.name;
+    document.getElementById("phaseTarget").textContent = "FASE " + String(n).padStart(2, "0");
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  document.querySelectorAll(".channel").forEach(c => {
+    c.addEventListener("click", () => showPhase(+c.dataset.phase));
+  });
+
+  // Keyboard navigation
+  document.addEventListener("keydown", (e) => {
+    if (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA") return;
+    if (e.key === "ArrowRight" && state.phase < 6) {
+      e.preventDefault();
+      showPhase(state.phase + 1);
+    } else if (e.key === "ArrowLeft" && state.phase > 1) {
+      e.preventDefault();
+      showPhase(state.phase - 1);
+    } else if (e.code === "Space") {
+      e.preventDefault();
+      toggleTimer();
+    }
+  });
+
+  // ============ TIMER ============
+  function fmt(secTotal) {
+    const sign = secTotal < 0 ? "-" : "";
+    secTotal = Math.abs(secTotal);
+    const m = Math.floor(secTotal / 60);
+    const s = secTotal % 60;
+    return sign + String(m).padStart(2, "0") + ":" + String(s).padStart(2, "0");
+  }
+
+  function updateTimerDisplay() {
+    let elapsed = state.timerElapsed;
+    if (state.timerRunning && state.timerStart) {
+      elapsed += Math.floor((Date.now() - state.timerStart) / 1000);
+    }
+    const disp = document.getElementById("timerDisp");
+    disp.textContent = fmt(elapsed);
+    disp.classList.toggle("over", elapsed > TOTAL_MIN * 60);
+
+    // Auto-suggest current phase by elapsed time (but don't force)
+    const elapsedMin = elapsed / 60;
+    const scheduled = PHASES.find(p => elapsedMin >= p.start && elapsedMin < p.end);
+    if (scheduled) {
+      document.getElementById("phaseTarget").textContent =
+        "FASE " + String(state.phase).padStart(2, "0") +
+        (scheduled.id !== state.phase ? " · sugerida " + String(scheduled.id).padStart(2, "0") : "");
+    }
+  }
+
+  function startTimer() {
+    if (state.timerRunning) return;
+    state.timerStart = Date.now();
+    state.timerRunning = true;
+    state.timerInterval = setInterval(updateTimerDisplay, 250);
+    document.getElementById("liveDot").classList.remove("paused");
+    document.getElementById("liveDot").classList.add("running");
+    document.getElementById("btnStart").textContent = "Pausar";
+  }
+
+  function pauseTimer() {
+    if (!state.timerRunning) return;
+    state.timerElapsed += Math.floor((Date.now() - state.timerStart) / 1000);
+    state.timerStart = null;
+    state.timerRunning = false;
+    clearInterval(state.timerInterval);
+    document.getElementById("liveDot").classList.remove("running");
+    document.getElementById("liveDot").classList.add("paused");
+    document.getElementById("btnStart").textContent = "Reanudar";
+    updateTimerDisplay();
+  }
+
+  function toggleTimer() {
+    if (state.timerRunning) pauseTimer();
+    else startTimer();
+  }
+
+  function resetTimer() {
+    clearInterval(state.timerInterval);
+    state.timerStart = null;
+    state.timerElapsed = 0;
+    state.timerRunning = false;
+    document.getElementById("liveDot").classList.remove("running", "paused");
+    document.getElementById("btnStart").textContent = "Iniciar";
+    updateTimerDisplay();
+  }
+
+  document.getElementById("btnStart").addEventListener("click", toggleTimer);
+  document.getElementById("btnReset").addEventListener("click", resetTimer);
+  updateTimerDisplay();
+
+  // ============ CHECK-FOR-UNDERSTANDING ============
+  document.querySelectorAll(".cfu").forEach(cfu => {
+    const opts = cfu.querySelector(".cfu-opts");
+    const correct = opts.dataset.correct;
+    const expl = cfu.querySelector(".cfu-expl");
+    const letters = ["a", "b", "c", "d", "e"];
+    cfu.querySelectorAll(".cfu-opt").forEach((btn, i) => {
+      btn.addEventListener("click", () => {
+        if (opts.dataset.answered) return;
+        opts.dataset.answered = "1";
+        const letter = letters[i];
+        cfu.querySelectorAll(".cfu-opt").forEach((b, j) => {
+          if (letters[j] === correct) b.classList.add("correct");
+          else if (letters[j] === letter) b.classList.add("wrong");
+        });
+        if (expl) expl.classList.add("show");
+      });
+    });
+  });
+
+  // ============ INIT ============
+  showPhase(1);
+</script>
+
+</body>
+</html>
