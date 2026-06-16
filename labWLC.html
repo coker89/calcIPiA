@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AAY1107 · Wireless Lab Dashboard</title>
+<style>
+  :root{
+    --bg:#070b14; --panel:#0f1729; --panel2:#121b30;
+    --border:rgba(0,245,255,.18); --border-hi:rgba(0,245,255,.5);
+    --cyan:#00f5ff; --magenta:#ff2a6d; --green:#00ff88;
+    --yellow:#fbbf24; --red:#ef4444; --violet:#a855f7;
+    --txt:#e5e7eb; --muted:#7d8aa3; --dim:#4b5572;
+    --mono:"JetBrains Mono","Fira Code",Consolas,"Courier New",monospace;
+    --ui:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  body{
+    font-family:var(--ui); background:var(--bg); color:var(--txt);
+    overflow:hidden; font-size:14px;
+    background-image:
+      radial-gradient(ellipse at top left, rgba(0,245,255,.07), transparent 50%),
+      radial-gradient(ellipse at bottom right, rgba(255,42,109,.06), transparent 50%);
+  }
+  body::before{
+    content:""; position:fixed; inset:0; pointer-events:none; z-index:1;
+    background:repeating-linear-gradient(0deg,rgba(0,245,255,.025) 0 1px,transparent 1px 3px);
+    opacity:.5;
+  }
+  .app{display:flex; height:100vh; position:relative; z-index:2}
+  
+  /* SIDEBAR */
+  .sidebar{
+    width:280px; flex-shrink:0; background:linear-gradient(180deg,var(--panel) 0%, #0a1020 100%);
+    border-right:1px solid var(--border); display:flex; flex-direction:column;
+    box-shadow: 4px 0 24px rgba(0,245,255,.05);
+  }
+  .brand{
+    padding:18px 18px 14px; border-bottom:1px solid var(--border);
+  }
+  .brand-title{
+    font-family:var(--mono); font-size:11px; letter-spacing:3px;
+    color:var(--cyan); text-shadow:0 0 8px rgba(0,245,255,.6); margin-bottom:4px;
+  }
+  .brand-sub{font-size:18px; font-weight:700; line-height:1.2}
+  .brand-sub span{color:var(--magenta); text-shadow:0 0 8px rgba(255,42,109,.4)}
+  .brand-meta{font-size:10px; color:var(--muted); margin-top:6px; font-family:var(--mono)}
+  
+  .mode-toggle{
+    padding:12px 16px; border-bottom:1px solid var(--border);
+    display:flex; gap:6px; background:rgba(0,0,0,.2);
+  }
+  .mode-btn{
+    flex:1; padding:8px 10px; border:1px solid var(--border); background:transparent;
+    color:var(--muted); font-family:var(--mono); font-size:10px; letter-spacing:1.5px;
+    cursor:pointer; border-radius:4px; transition:all .2s;
+  }
+  .mode-btn:hover{border-color:var(--border-hi); color:var(--txt)}
+  .mode-btn.active{
+    background:linear-gradient(135deg,rgba(0,245,255,.18),rgba(0,245,255,.05));
+    border-color:var(--cyan); color:var(--cyan);
+    box-shadow:inset 0 0 12px rgba(0,245,255,.15), 0 0 8px rgba(0,245,255,.2);
+  }
+  .mode-btn.active.eval{
+    background:linear-gradient(135deg,rgba(255,42,109,.18),rgba(255,42,109,.05));
+    border-color:var(--magenta); color:var(--magenta);
+    box-shadow:inset 0 0 12px rgba(255,42,109,.15), 0 0 8px rgba(255,42,109,.2);
+  }
+  
+  .nav{flex:1; overflow-y:auto; padding:8px}
+  .nav-section{
+    font-family:var(--mono); font-size:9px; letter-spacing:2px; color:var(--dim);
+    padding:14px 10px 6px;
+  }
+  .lab-item{
+    display:block; padding:12px 12px; margin:4px 0; border:1px solid transparent;
+    background:rgba(255,255,255,.02); border-radius:6px; cursor:pointer;
+    transition:all .2s; position:relative;
+  }
+  .lab-item:hover{background:rgba(0,245,255,.05); border-color:var(--border)}
+  .lab-item.active{
+    background:linear-gradient(90deg,rgba(0,245,255,.12),rgba(0,245,255,.02));
+    border-color:var(--cyan);
+    box-shadow:inset 3px 0 0 var(--cyan), 0 0 16px rgba(0,245,255,.1);
+  }
+  .lab-item.active::before{
+    content:""; position:absolute; left:-1px; top:0; bottom:0; width:3px;
+    background:var(--cyan); box-shadow:0 0 12px var(--cyan);
+  }
+  .lab-num{
+    font-family:var(--mono); font-size:9px; color:var(--cyan); letter-spacing:1.5px;
+    margin-bottom:3px;
+  }
+  .lab-title{font-size:13px; font-weight:600; margin-bottom:8px}
+  .progress{
+    height:4px; background:rgba(255,255,255,.06); border-radius:2px; overflow:hidden;
+    position:relative;
+  }
+  .progress-fill{
+    height:100%; background:linear-gradient(90deg,var(--cyan),var(--green));
+    box-shadow:0 0 8px var(--cyan); transition:width .4s;
+  }
+  .progress-text{
+    font-family:var(--mono); font-size:9px; color:var(--muted);
+    margin-top:4px; display:flex; justify-content:space-between;
+  }
+  
+  .sidebar-foot{
+    padding:12px 16px; border-top:1px solid var(--border);
+    font-family:var(--mono); font-size:9px; color:var(--dim); letter-spacing:1px;
+  }
+  .blink{animation:blink 1.5s infinite}
+  @keyframes blink{50%{opacity:.3}}
+  
+  /* MAIN */
+  .main{flex:1; overflow-y:auto; padding:24px 32px}
+  .header{
+    display:flex; justify-content:space-between; align-items:flex-end;
+    margin-bottom:20px; padding-bottom:16px; border-bottom:1px solid var(--border);
+  }
+  .header-left h1{
+    font-size:24px; font-weight:700; margin-bottom:4px;
+    background:linear-gradient(90deg,var(--cyan),var(--violet));
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .header-left p{color:var(--muted); font-size:13px; max-width:600px}
+  .header-right{display:flex; gap:10px; align-items:center}
+  
+  .stat{
+    background:var(--panel); border:1px solid var(--border); padding:8px 14px;
+    border-radius:6px; min-width:90px; text-align:center;
+  }
+  .stat-label{
+    font-family:var(--mono); font-size:9px; letter-spacing:1.5px; color:var(--muted);
+  }
+  .stat-val{font-size:18px; font-weight:700; font-family:var(--mono)}
+  .stat.timer .stat-val{color:var(--cyan)}
+  .stat.score .stat-val{color:var(--green)}
+  .stat.score.bad .stat-val{color:var(--red)}
+  
+  .btn{
+    border:1px solid var(--border); background:var(--panel); color:var(--txt);
+    padding:8px 14px; border-radius:6px; cursor:pointer; font-family:var(--mono);
+    font-size:11px; letter-spacing:1px; transition:all .2s; display:inline-flex;
+    align-items:center; gap:6px;
+  }
+  .btn:hover{border-color:var(--cyan); color:var(--cyan); box-shadow:0 0 12px rgba(0,245,255,.2)}
+  .btn.primary{
+    background:linear-gradient(135deg,rgba(0,245,255,.15),rgba(0,245,255,.03));
+    border-color:var(--cyan); color:var(--cyan);
+  }
+  .btn.primary:hover{box-shadow:0 0 16px rgba(0,245,255,.4)}
+  .btn.magenta{
+    background:linear-gradient(135deg,rgba(255,42,109,.15),rgba(255,42,109,.03));
+    border-color:var(--magenta); color:var(--magenta);
+  }
+  .btn.magenta:hover{box-shadow:0 0 16px rgba(255,42,109,.4)}
+  
+  /* SECTIONS */
+  .section{
+    background:var(--panel); border:1px solid var(--border); border-radius:8px;
+    margin-bottom:20px; overflow:hidden;
+  }
+  .section-head{
+    padding:14px 18px; border-bottom:1px solid var(--border);
+    display:flex; align-items:center; justify-content:space-between;
+    background:linear-gradient(90deg,rgba(0,245,255,.04),transparent);
+  }
+  .section-title{
+    font-family:var(--mono); font-size:11px; letter-spacing:2px; color:var(--cyan);
+    display:flex; align-items:center; gap:8px;
+  }
+  .section-title::before{
+    content:""; width:6px; height:6px; background:var(--cyan); border-radius:50%;
+    box-shadow:0 0 8px var(--cyan);
+  }
+  
+  /* TOPOLOGY */
+  .topology-wrap{padding:20px; background:radial-gradient(ellipse at center,rgba(0,245,255,.03),transparent 70%)}
+  .topology-svg{width:100%; height:340px; display:block}
+  .topology-legend{
+    display:flex; gap:14px; flex-wrap:wrap; margin-top:12px; padding-top:12px;
+    border-top:1px solid var(--border); font-family:var(--mono); font-size:10px;
+    color:var(--muted);
+  }
+  .legend-item{display:flex; align-items:center; gap:6px}
+  .legend-dot{width:8px; height:8px; border-radius:50%}
+  
+  .node{cursor:pointer; transition:filter .2s}
+  .node:hover{filter:drop-shadow(0 0 8px var(--cyan))}
+  .node-shape{transition:all .2s}
+  .node:hover .node-shape{stroke:var(--cyan); stroke-width:2}
+  .node-label{
+    font-family:var(--mono); font-size:10px; fill:var(--txt); text-anchor:middle;
+    pointer-events:none; font-weight:600;
+  }
+  .node-sub{
+    font-family:var(--mono); font-size:8px; fill:var(--muted); text-anchor:middle;
+    pointer-events:none;
+  }
+  .link{stroke:var(--border-hi); stroke-width:1.5; fill:none}
+  .link.wireless{stroke-dasharray:4 3; stroke:var(--magenta); opacity:.7}
+  .signal-arc{stroke:var(--magenta); fill:none; opacity:.4}
+  
+  /* ACCORDION / PHASES */
+  .phase{border-bottom:1px solid var(--border)}
+  .phase:last-child{border-bottom:none}
+  .phase-head{
+    padding:14px 18px; cursor:pointer; display:flex; align-items:center; gap:12px;
+    background:rgba(0,0,0,.15); transition:background .2s;
+  }
+  .phase-head:hover{background:rgba(0,245,255,.04)}
+  .phase-num{
+    width:28px; height:28px; border-radius:6px; display:flex; align-items:center;
+    justify-content:center; font-family:var(--mono); font-weight:700; font-size:12px;
+    background:linear-gradient(135deg,var(--cyan),var(--violet)); color:#000;
+  }
+  .phase-title{flex:1; font-weight:600; font-size:13px}
+  .phase-count{font-family:var(--mono); font-size:10px; color:var(--muted)}
+  .phase-toggle{
+    transition:transform .2s; color:var(--cyan); font-family:var(--mono); font-size:14px;
+  }
+  .phase.open .phase-toggle{transform:rotate(90deg)}
+  .phase-body{display:none; padding:0 18px 12px}
+  .phase.open .phase-body{display:block}
+  
+  /* STEPS */
+  .step{
+    margin:10px 0; border:1px solid var(--border); border-radius:6px;
+    background:var(--panel2); overflow:hidden;
+  }
+  .step.done{border-color:rgba(0,255,136,.4); background:rgba(0,255,136,.03)}
+  .step-head{
+    padding:11px 14px; display:flex; align-items:center; gap:10px; cursor:pointer;
+    transition:background .2s;
+  }
+  .step-head:hover{background:rgba(0,245,255,.04)}
+  .step-check{
+    width:18px; height:18px; border:1.5px solid var(--border-hi); border-radius:4px;
+    flex-shrink:0; display:flex; align-items:center; justify-content:center;
+    transition:all .2s; cursor:pointer; background:rgba(0,0,0,.3);
+  }
+  .step-check:hover{border-color:var(--cyan)}
+  .step.done .step-check{background:var(--green); border-color:var(--green)}
+  .step.done .step-check::after{
+    content:"✓"; color:#000; font-weight:900; font-size:13px;
+  }
+  .step-title{flex:1; font-size:13px}
+  .step.done .step-title{color:var(--muted); text-decoration:line-through; text-decoration-color:rgba(0,255,136,.4)}
+  .step-expand{color:var(--cyan); font-family:var(--mono); font-size:11px; transition:transform .2s}
+  .step.open .step-expand{transform:rotate(90deg)}
+  .step-body{display:none; padding:0 14px 14px; border-top:1px solid var(--border)}
+  .step.open .step-body{display:block}
+  .step-concept{
+    padding:12px 14px; margin:10px -14px 12px; background:rgba(168,85,247,.06);
+    border-left:3px solid var(--violet); font-size:12px; line-height:1.6; color:#d8d4dc;
+  }
+  .step-concept b{color:var(--violet)}
+  
+  .tabs{display:flex; gap:2px; margin-bottom:0; border-bottom:1px solid var(--border)}
+  .tab{
+    padding:8px 14px; background:transparent; border:none; color:var(--muted);
+    font-family:var(--mono); font-size:10px; letter-spacing:1.5px; cursor:pointer;
+    border-bottom:2px solid transparent; transition:all .2s;
+  }
+  .tab:hover{color:var(--txt)}
+  .tab.active{color:var(--cyan); border-bottom-color:var(--cyan)}
+  .tab-pane{display:none; padding:12px 0}
+  .tab-pane.active{display:block}
+  
+  .code{
+    background:#05080f; border:1px solid var(--border); border-radius:4px;
+    padding:12px 14px; font-family:var(--mono); font-size:12px; color:#c8e8ff;
+    overflow-x:auto; white-space:pre; line-height:1.6; position:relative;
+  }
+  .code .cmt{color:var(--dim); font-style:italic}
+  .code .kw{color:var(--magenta)}
+  .code .str{color:var(--green)}
+  .code .num{color:var(--yellow)}
+  .code-label{
+    font-family:var(--mono); font-size:9px; color:var(--cyan); letter-spacing:2px;
+    margin-bottom:6px; display:flex; align-items:center; gap:6px;
+  }
+  .code-label::before{content:"▸"}
+  .gui-steps{padding-left:18px; font-size:12px; line-height:1.9; color:#d0d6e0}
+  .gui-steps li{padding:2px 0}
+  .gui-steps li::marker{color:var(--cyan); font-family:var(--mono); font-size:10px}
+  
+  .verify-box{
+    margin-top:12px; padding:10px 12px; background:rgba(0,255,136,.05);
+    border:1px solid rgba(0,255,136,.2); border-radius:4px;
+  }
+  .verify-label{
+    font-family:var(--mono); font-size:9px; color:var(--green); letter-spacing:2px;
+    margin-bottom:6px;
+  }
+  
+  /* TROUBLESHOOTING */
+  .ts-item{
+    margin:12px 0; padding:14px 16px; background:var(--panel2);
+    border:1px solid var(--border); border-radius:6px;
+  }
+  .ts-scenario{
+    background:rgba(239,68,68,.06); border-left:3px solid var(--red);
+    padding:10px 12px; margin-bottom:12px; border-radius:0 4px 4px 0;
+    font-size:12px; line-height:1.6;
+  }
+  .ts-scenario b{color:var(--red); font-family:var(--mono); font-size:10px; letter-spacing:1.5px}
+  .ts-question{font-weight:600; margin-bottom:10px; font-size:13px}
+  .ts-options{display:flex; flex-direction:column; gap:6px}
+  .ts-opt{
+    padding:9px 12px; background:rgba(255,255,255,.02); border:1px solid var(--border);
+    border-radius:4px; cursor:pointer; font-size:12px; transition:all .15s;
+    display:flex; align-items:center; gap:8px;
+  }
+  .ts-opt:hover{border-color:var(--cyan); background:rgba(0,245,255,.04)}
+  .ts-opt.correct{
+    border-color:var(--green); background:rgba(0,255,136,.08);
+    box-shadow:0 0 12px rgba(0,255,136,.15);
+  }
+  .ts-opt.wrong{border-color:var(--red); background:rgba(239,68,68,.08)}
+  .ts-opt.locked{pointer-events:none; opacity:.6}
+  .ts-opt-key{
+    font-family:var(--mono); font-size:10px; color:var(--cyan); width:18px;
+  }
+  .ts-explain{
+    margin-top:10px; padding:10px 12px; background:rgba(0,245,255,.04);
+    border-left:3px solid var(--cyan); border-radius:0 4px 4px 0; font-size:12px;
+    line-height:1.6; display:none;
+  }
+  .ts-explain.show{display:block}
+  
+  /* MODAL */
+  .modal-bg{
+    position:fixed; inset:0; background:rgba(7,11,20,.85); backdrop-filter:blur(4px);
+    display:none; align-items:center; justify-content:center; z-index:100;
+  }
+  .modal-bg.show{display:flex}
+  .modal{
+    background:var(--panel); border:1px solid var(--cyan); border-radius:8px;
+    min-width:380px; max-width:500px; box-shadow:0 0 40px rgba(0,245,255,.25);
+    animation:popin .25s;
+  }
+  @keyframes popin{from{transform:scale(.92); opacity:0} to{transform:scale(1); opacity:1}}
+  .modal-head{
+    padding:14px 18px; border-bottom:1px solid var(--border); display:flex;
+    justify-content:space-between; align-items:center;
+    background:linear-gradient(90deg,rgba(0,245,255,.08),transparent);
+  }
+  .modal-head h3{font-size:14px; color:var(--cyan); font-family:var(--mono); letter-spacing:1.5px}
+  .modal-close{
+    background:transparent; border:1px solid var(--border); color:var(--muted);
+    width:24px; height:24px; border-radius:4px; cursor:pointer; font-family:var(--mono);
+  }
+  .modal-close:hover{color:var(--red); border-color:var(--red)}
+  .modal-body{padding:18px}
+  .kv{display:flex; padding:6px 0; border-bottom:1px dashed var(--border); font-size:12px}
+  .kv:last-child{border-bottom:none}
+  .kv-k{
+    font-family:var(--mono); font-size:10px; color:var(--muted); letter-spacing:1px;
+    width:130px; flex-shrink:0; padding-top:2px;
+  }
+  .kv-v{flex:1; color:#d8e2f0; font-family:var(--mono); font-size:11px; word-break:break-all}
+  
+  /* TOAST */
+  .toast{
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--panel); border:1px solid var(--green); padding:10px 18px;
+    border-radius:6px; font-family:var(--mono); font-size:11px; color:var(--green);
+    box-shadow:0 0 24px rgba(0,255,136,.3); opacity:0; transition:all .3s; z-index:200;
+    pointer-events:none;
+  }
+  .toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+  
+  /* EXPORT MODAL */
+  .export-modal{max-width:720px; width:90%}
+  .export-modal .code{max-height:55vh; overflow:auto; white-space:pre}
+  
+  /* SCROLLBAR */
+  ::-webkit-scrollbar{width:10px; height:10px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:rgba(0,245,255,.15); border-radius:5px}
+  ::-webkit-scrollbar-thumb:hover{background:rgba(0,245,255,.3)}
+  
+  /* COMPLETION */
+  .lab-complete{
+    margin-top:20px; padding:18px; text-align:center;
+    background:linear-gradient(135deg,rgba(0,255,136,.08),rgba(0,245,255,.05));
+    border:1px solid var(--green); border-radius:8px; display:none;
+  }
+  .lab-complete.show{display:block}
+  .lab-complete h3{color:var(--green); margin-bottom:6px; letter-spacing:2px; font-family:var(--mono)}
+  .lab-complete p{color:#d8e2f0; font-size:12px}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-title">▌ AAY1107</div>
+      <div class="brand-sub">Wireless <span>Lab</span> OS</div>
+      <div class="brand-meta">v1.0 · OFFLINE READY</div>
+    </div>
+    <div class="mode-toggle">
+      <button class="mode-btn active" data-mode="guide" onclick="setMode('guide')">▸ GUÍA</button>
+      <button class="mode-btn eval" data-mode="eval" onclick="setMode('eval')">▸ EVAL</button>
+    </div>
+    <nav class="nav" id="nav"></nav>
+    <div class="sidebar-foot">
+      <span class="blink">●</span> SYSTEM ONLINE · LOCAL://CLASSROOM
+    </div>
+  </aside>
+
+  <main class="main">
+    <div class="header">
+      <div class="header-left">
+        <h1 id="labTitle">—</h1>
+        <p id="labDesc">—</p>
+      </div>
+      <div class="header-right" id="headerRight"></div>
+    </div>
+    <div id="content"></div>
+  </main>
+</div>
+
+<div class="modal-bg" id="modalBg" onclick="if(event.target.id==='modalBg')closeModal()">
+  <div class="modal" id="modal"></div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+/* ============================================================
+   LAB DATA — Reemplaza este bloque con los datos de tus guías reales.
+   Estructura: nodes[], links[], phases[].steps[], troubleshooting[]
+   ============================================================ */
+const LABS = {
+
+  lab1: {
+    id:"lab1",
+    code:"LAB·01",
+    title:"AP Autónomo con WPA2-PSK",
+    description:"Configuración de un Access Point autónomo (standalone) con SSID único, autenticación WPA2-Personal y direccionamiento dinámico vía DHCP en el router. Ideal para introducir el plano de control distribuido.",
+    topology:{
+      nodes:[
+        {id:"R1",type:"router",label:"R1",sub:"Gateway",x:90,y:170,data:{
+          "Modelo":"Cisco 2911 ISR",
+          "Gi0/0":"192.168.10.1/24 (VLAN 10 Mgmt+Clients)",
+          "DHCP Pool":"WIFI-POOL → 192.168.10.50-200",
+          "Default GW":"192.168.10.1",
+          "DNS":"8.8.8.8"
+        }},
+        {id:"SW1",type:"switch",label:"SW1",sub:"Access",x:280,y:170,data:{
+          "Modelo":"Catalyst 2960-24TT",
+          "VLAN 10":"WIFI (Mgmt + Clients)",
+          "F0/1 → R1":"Trunk (native VLAN 1)",
+          "F0/2 → AP":"Access VLAN 10",
+          "F0/5 → PC1":"Access VLAN 10"
+        }},
+        {id:"AP1",type:"ap-aut",label:"AP-AUT1",sub:"Autonomous",x:470,y:170,data:{
+          "Modelo":"AIR-AP1142N-A-K9",
+          "Modo":"Autonomous (IOS standalone)",
+          "IP BVI1":"192.168.10.10/24",
+          "SSID":"CampusGuest",
+          "Seguridad":"WPA2-PSK (AES)",
+          "Passphrase":"Wifi2026!"
+        }},
+        {id:"PC1",type:"pc",label:"PC1",sub:"Wired Client",x:280,y:300,data:{
+          "Interfaz":"FastEthernet0",
+          "DHCP":"Habilitado",
+          "VLAN":"10"
+        }},
+        {id:"LT1",type:"laptop",label:"Laptop1",sub:"Wireless Client",x:620,y:170,data:{
+          "Adaptador":"802.11 WPA2",
+          "SSID a asociar":"CampusGuest",
+          "Passphrase":"Wifi2026!",
+          "DHCP":"Habilitado"
+        }}
+      ],
+      links:[
+        {from:"R1",to:"SW1"},
+        {from:"SW1",to:"AP1"},
+        {from:"SW1",to:"PC1"},
+        {from:"AP1",to:"LT1",wireless:true}
+      ]
+    },
+    phases:[
+      {id:"p1", title:"Fase 1 — Infraestructura cableada y DHCP", steps:[
+        {id:"s1", title:"Configurar interfaz LAN y DHCP pool en R1",
+         concept:"<b>Concepto:</b> El router actúa como gateway y servidor DHCP de la única VLAN. El pool entrega IP, máscara, gateway y DNS a clientes alámbricos e inalámbricos por igual.",
+         cli:"enable\nconfigure terminal\nhostname R1\ninterface GigabitEthernet0/0\n description LAN-WIFI\n ip address 192.168.10.1 255.255.255.0\n no shutdown\nexit\nip dhcp excluded-address 192.168.10.1 192.168.10.49\nip dhcp pool WIFI-POOL\n network 192.168.10.0 255.255.255.0\n default-router 192.168.10.1\n dns-server 8.8.8.8\nexit",
+         gui:["Abrir consola CLI del R1 en Packet Tracer","Ingresar a modo privilegiado con enable","Pegar el bloque CLI completo","Guardar con copy running-config startup-config"],
+         verify:"show ip dhcp binding\nshow ip interface brief",
+         expected:"GigabitEthernet0/0   192.168.10.1   YES manual up   up"},
+        {id:"s2", title:"Crear VLAN 10 en SW1 y asignar puertos de acceso",
+         concept:"<b>Concepto:</b> Aunque exista una sola VLAN funcional, declararla explícitamente refuerza la disciplina de segmentación y facilita expansión futura.",
+         cli:"enable\nconf t\nhostname SW1\nvlan 10\n name WIFI\nexit\ninterface range FastEthernet0/2 - 5\n switchport mode access\n switchport access vlan 10\nexit\ninterface FastEthernet0/1\n switchport mode trunk\nexit",
+         gui:["Consola del SW1 → modo privilegiado","Pegar el bloque CLI","Verificar con show vlan brief"],
+         verify:"show vlan brief",
+         expected:"10   WIFI   active   Fa0/2, Fa0/3, Fa0/4, Fa0/5"}
+      ]},
+      {id:"p2", title:"Fase 2 — Inicialización del AP Autónomo", steps:[
+        {id:"s3", title:"Asignar IP de gestión BVI1 al AP",
+         concept:"<b>Concepto:</b> Un AP autónomo se administra por una interfaz virtual (BVI1) que une el radio y la interfaz cableada en un mismo broadcast domain.",
+         cli:"enable\nconf t\nhostname AP-AUT1\ninterface BVI1\n ip address 192.168.10.10 255.255.255.0\n no shutdown\nexit\nip default-gateway 192.168.10.1",
+         gui:["Conectar al AP por consola","Acceder al modo privilegiado","Configurar BVI1 vía CLI (Packet Tracer no expone GUI del AP autónomo)"],
+         verify:"show interfaces bvi 1",
+         expected:"BVI1 is up, line protocol is up\nInternet address is 192.168.10.10/24"}
+      ]},
+      {id:"p3", title:"Fase 3 — SSID y seguridad WPA2-PSK", steps:[
+        {id:"s4", title:"Crear SSID CampusGuest con WPA2-PSK",
+         concept:"<b>Concepto:</b> El SSID es la identificación lógica de la WLAN. WPA2-PSK usa AES-CCMP y deriva la PMK a partir de la passphrase compartida — adecuado para entornos sin RADIUS.",
+         cli:"conf t\ndot11 ssid CampusGuest\n authentication open\n authentication key-management wpa version 2\n wpa-psk ascii Wifi2026!\n guest-mode\nexit\ninterface Dot11Radio0\n encryption mode ciphers aes-ccm\n ssid CampusGuest\n no shutdown\nexit",
+         gui:["Click sobre AP1 → pestaña Config → Port 1","Seleccionar SSID Manager","Crear SSID CampusGuest, marcar Open Auth + WPA2","Ingresar la passphrase Wifi2026!"],
+         verify:"show dot11 associations\nshow running-config | section dot11",
+         expected:"SSID [CampusGuest] : Active\nEncryption: AES-CCM"}
+      ]},
+      {id:"p4", title:"Fase 4 — Asociación y validación del cliente", steps:[
+        {id:"s5", title:"Asociar Laptop1 al SSID CampusGuest",
+         concept:"<b>Concepto:</b> El cliente realiza Probe → Auth → Association → 4-way handshake. Tras el handshake EAPOL recibe IP por DHCP del router R1.",
+         cli:"! En la laptop: Desktop → PC Wireless\n! Connect → Seleccionar CampusGuest → Connect\n! Ingresar passphrase: Wifi2026!",
+         gui:["Click sobre Laptop1 → Desktop → PC Wireless","Pestaña Connect → seleccionar CampusGuest","Ingresar passphrase Wifi2026!","Verificar IP en IP Configuration"],
+         verify:"ping 192.168.10.1",
+         expected:"Reply from 192.168.10.1: bytes=32 time<1ms TTL=255"}
+      ]}
+    ],
+    troubleshooting:[
+      {id:"t1",
+       scenario:"<b>Escenario A:</b> Laptop1 se conecta al SSID CampusGuest pero queda en estado 'Limited Connectivity' y no recibe dirección IP automática.",
+       question:"¿Cuál es la causa más probable del fallo?",
+       options:[
+         "El SSID está configurado en modo broadcast deshabilitado",
+         "El puerto F0/2 del switch no está en VLAN 10 o el pool DHCP está mal direccionado",
+         "El cifrado AES-CCM no es compatible con WPA2-PSK",
+         "El AP autónomo no soporta clientes 802.11n"
+       ],
+       correct:1,
+       explanation:"Si la asociación es exitosa pero no hay IP, el problema está en la capa 2/3 del lado cableado. Causas frecuentes: puerto del AP en VLAN incorrecta, pool DHCP en red diferente a la BVI1, o exclusión accidental del rango. El comando <code>debug ip dhcp server packet</code> en R1 confirma si las requests del cliente llegan al servidor."},
+      {id:"t2",
+       scenario:"<b>Escenario B:</b> La passphrase 'Wifi2026!' es rechazada repetidamente por la laptop a pesar de coincidir exactamente con la configurada en el AP.",
+       question:"¿Cuál sería el primer comando de verificación en el AP?",
+       options:[
+         "show dot11 associations",
+         "show running-config | section dot11 ssid CampusGuest",
+         "show interfaces dot11radio 0",
+         "show controllers dot11radio 0"
+       ],
+       correct:1,
+       explanation:"Revisar la sección dot11 confirma el tipo exacto de key-management (wpa version 2 vs wpa version 1), el modo de cifrado y la passphrase almacenada. Un error común es declarar <code>wpa-psk ascii</code> sin habilitar <code>encryption mode ciphers aes-ccm</code> en la interfaz radio."}
+    ]
+  },
+
+  lab2: {
+    id:"lab2",
+    code:"LAB·02",
+    title:"LWAP + WLC con CAPWAP y DHCP opción 43",
+    description:"Despliegue de un Access Point ligero (LWAP) que descubre y se une al Wireless LAN Controller mediante CAPWAP. El DHCP del cliente entrega la opción 43 para apuntar al WLC. WLAN única WPA2-Personal.",
+    topology:{
+      nodes:[
+        {id:"R1",type:"router",label:"R1",sub:"Gateway+DHCP",x:80,y:200,data:{
+          "Modelo":"Cisco 2911 ISR",
+          "G0/0.10 (Mgmt)":"10.10.10.1/24",
+          "G0/0.20 (AP)":"10.10.20.1/24",
+          "G0/0.30 (Clients)":"10.10.30.1/24",
+          "DHCP Pool AP":"VLAN20 + opción 43 → 10.10.10.5",
+          "DHCP Pool Clients":"VLAN30 → 10.10.30.50-200"
+        }},
+        {id:"SW1",type:"switch-l3",label:"SW1",sub:"Distribution",x:260,y:200,data:{
+          "Modelo":"Catalyst 3650 Multilayer",
+          "VLANs":"10 (Mgmt), 20 (AP), 30 (Clients)",
+          "F0/1":"Trunk → R1",
+          "F0/2":"Trunk → WLC",
+          "F0/3":"Access VLAN 20 → LAP"
+        }},
+        {id:"WLC1",type:"wlc",label:"WLC1",sub:"Controller",x:440,y:80,data:{
+          "Modelo":"Cisco 3504 WLC (PT simulado)",
+          "Management IP":"10.10.10.5/24",
+          "AP-Manager IP":"10.10.10.5",
+          "VLAN Interface (clients)":"10.10.30.5",
+          "WLAN ID":"1",
+          "SSID":"CORP-NET",
+          "Seguridad":"WPA2-Personal",
+          "Passphrase":"Corp@2026Net"
+        }},
+        {id:"LAP1",type:"ap-lwap",label:"LAP1",sub:"Lightweight",x:440,y:300,data:{
+          "Modelo":"AIR-LAP1142N-A-K9",
+          "Modo":"Local (CAPWAP-controlled)",
+          "DHCP VLAN 20":"Recibe IP + opción 43",
+          "Joined WLC":"10.10.10.5",
+          "Túnel":"CAPWAP UDP 5246/5247"
+        }},
+        {id:"LT1",type:"laptop",label:"Laptop1",sub:"Wireless Client",x:620,y:300,data:{
+          "Asociación":"SSID CORP-NET",
+          "Passphrase":"Corp@2026Net",
+          "VLAN cliente":"30 (vía túnel WLC)",
+          "IP esperada":"10.10.30.50/24"
+        }}
+      ],
+      links:[
+        {from:"R1",to:"SW1"},
+        {from:"SW1",to:"WLC1"},
+        {from:"SW1",to:"LAP1"},
+        {from:"LAP1",to:"LT1",wireless:true},
+        {from:"LAP1",to:"WLC1",capwap:true}
+      ]
+    },
+    phases:[
+      {id:"p1", title:"Fase 1 — Trunking, sub-interfaces y pools DHCP", steps:[
+        {id:"s1", title:"Configurar router-on-a-stick con sub-interfaces y DHCP opción 43",
+         concept:"<b>Concepto clave:</b> La <b>opción 43</b> del DHCP entrega el IP del WLC al LAP en formato hexadecimal TLV (type=F1, length=4, value=IP). Para 10.10.10.5 el valor es <code>F1040A0A0A05</code>.",
+         cli:"enable\nconf t\nhostname R1\ninterface G0/0\n no shutdown\nexit\ninterface G0/0.10\n encapsulation dot1Q 10\n ip address 10.10.10.1 255.255.255.0\ninterface G0/0.20\n encapsulation dot1Q 20\n ip address 10.10.20.1 255.255.255.0\ninterface G0/0.30\n encapsulation dot1Q 30\n ip address 10.10.30.1 255.255.255.0\nexit\nip dhcp excluded-address 10.10.20.1 10.10.20.9\nip dhcp pool AP-POOL\n network 10.10.20.0 255.255.255.0\n default-router 10.10.20.1\n option 43 hex F1040A0A0A05\nexit\nip dhcp pool CLIENT-POOL\n network 10.10.30.0 255.255.255.0\n default-router 10.10.30.1\n dns-server 8.8.8.8\nexit",
+         gui:["CLI del R1","Pegar el bloque completo","Validar opción 43: show running-config | section dhcp"],
+         verify:"show running-config | section dhcp\nshow ip dhcp pool",
+         expected:"Pool AP-POOL : option 43 hex F1040A0A0A05"},
+        {id:"s2", title:"Configurar trunks 802.1Q en SW1",
+         concept:"<b>Concepto:</b> El switch debe transportar las VLANs 10, 20 y 30 hacia el router y hacia el WLC. El puerto del LAP queda como access VLAN 20.",
+         cli:"enable\nconf t\nhostname SW1\nvlan 10\n name MGMT\nvlan 20\n name AP-VLAN\nvlan 30\n name CLIENTS\nexit\ninterface F0/1\n switchport trunk encapsulation dot1q\n switchport mode trunk\ninterface F0/2\n switchport trunk encapsulation dot1q\n switchport mode trunk\ninterface F0/3\n switchport mode access\n switchport access vlan 20\nexit",
+         gui:["CLI del SW1","Pegar el bloque","Verificar con show interfaces trunk"],
+         verify:"show interfaces trunk",
+         expected:"Port  Mode  Encapsulation  Status   Native VLAN\nFa0/1 on    802.1q         trunking 1\nFa0/2 on    802.1q         trunking 1"}
+      ]},
+      {id:"p2", title:"Fase 2 — Aprovisionamiento CAPWAP del LAP", steps:[
+        {id:"s3", title:"Encender LAP1 y verificar registro en WLC",
+         concept:"<b>Concepto CAPWAP:</b> El LAP envía un Discovery Request en broadcast → DHCP responde con opción 43 → LAP envía Join Request al WLC → se establece túnel DTLS por UDP 5246 (control) y 5247 (datos). El AP descarga imagen y configuración.",
+         cli:"! En el LAP no se requiere CLI: el proceso CAPWAP es automático\n! Verificación desde el WLC (vía Telnet/SSH al management 10.10.10.5):\nshow ap summary\nshow capwap client config",
+         gui:["Conectar el LAP al puerto F0/3 del SW1","Esperar ~30-60 s a que complete el join","En el WLC: pestaña Monitor → Access Points → All APs"],
+         verify:"show ap summary",
+         expected:"AP Name    AP Model        MAC                Location   Status\nLAP1       AIR-LAP1142N    0023.5d.xx.xx.xx   default    REG"}
+      ]},
+      {id:"p3", title:"Fase 3 — Creación de WLAN en el WLC", steps:[
+        {id:"s4", title:"Crear interfaz dinámica de cliente y WLAN CORP-NET",
+         concept:"<b>Concepto:</b> Cada WLAN se mapea a una interfaz dinámica del WLC, que a su vez pertenece a una VLAN. El tráfico de cliente queda <i>tunelizado</i> hasta el WLC y se desencapsula hacia la VLAN 30.",
+         cli:"! Configuración vía GUI del WLC (Packet Tracer)\n! No hay equivalente CLI completo en PT simulado",
+         gui:["Acceder al WLC vía HTTP en 10.10.10.5","Controller → Interfaces → New → Nombre: client-vlan30, VLAN ID: 30, IP 10.10.30.5","WLANs → Create New → Profile: CORP-NET, SSID: CORP-NET, ID: 1","General → Status: Enabled, Interface: client-vlan30","Security → Layer 2: WPA2 + PSK + AES","Security → PSK Format: ASCII → Passphrase: Corp@2026Net","Apply / Save"],
+         verify:"show wlan summary",
+         expected:"WLAN ID  Profile     SSID        Status   Interface\n1        CORP-NET    CORP-NET    Enabled  client-vlan30"}
+      ]},
+      {id:"p4", title:"Fase 4 — Asociación y validación end-to-end", steps:[
+        {id:"s5", title:"Conectar Laptop1 a CORP-NET y validar conectividad",
+         concept:"<b>Concepto:</b> Cliente asocia a LAP → tráfico de datos cifrado en CAPWAP llega al WLC → WLC desencapsula y entrega en VLAN 30. La IP entregada por R1 corresponde a CLIENT-POOL.",
+         cli:"! En la laptop: Desktop → PC Wireless\n! Connect → CORP-NET → passphrase Corp@2026Net\n! Verificar: ipconfig /all   |   ping 10.10.30.1",
+         gui:["Click Laptop1 → Desktop → PC Wireless → Connect","Seleccionar CORP-NET","Ingresar passphrase Corp@2026Net","Verificar IP 10.10.30.x en IP Configuration","Ping 10.10.30.1 (gateway) y 10.10.10.5 (WLC mgmt)"],
+         verify:"ping 10.10.30.1",
+         expected:"Reply from 10.10.30.1: bytes=32 time<1ms TTL=255\nPing statistics: 4 sent, 4 received, 0% loss"}
+      ]}
+    ],
+    troubleshooting:[
+      {id:"t1",
+       scenario:"<b>Escenario A:</b> El LAP1 recibe dirección IP en VLAN 20 pero después de 5 minutos sigue en estado 'DISCOVERY' y no se registra al WLC.",
+       question:"¿Cuál es la causa raíz más probable?",
+       options:[
+         "El LAP está configurado en modo H-REAP en lugar de Local",
+         "La opción 43 del pool DHCP AP-POOL tiene formato hexadecimal incorrecto o IP del WLC equivocada",
+         "El WLC no tiene la WLAN creada todavía",
+         "Falta configurar SSH en el WLC"
+       ],
+       correct:1,
+       explanation:"Sin opción 43 válida (o con formato TLV erróneo), el LAP no descubre la IP del WLC y queda en discovery indefinidamente. Verificar con <code>show running-config | section dhcp</code>: el valor para 10.10.10.5 debe ser <code>F1040A0A0A05</code> (F1=tipo, 04=longitud, 0A0A0A05=IP en hex). Alternativas: DNS resolviendo CISCO-CAPWAP-CONTROLLER.localdomain, o broadcast de subred."},
+      {id:"t2",
+       scenario:"<b>Escenario B:</b> El LAP se une exitosamente al WLC, pero los clientes asociados al SSID CORP-NET reciben IP del rango 10.10.20.x en vez de 10.10.30.x.",
+       question:"¿Dónde está el error de configuración?",
+       options:[
+         "El passphrase WPA2 está incorrecto en el WLC",
+         "La WLAN está mapeada a la interfaz de management en vez de a la interfaz dinámica client-vlan30",
+         "El switch tiene STP bloqueando la VLAN 30",
+         "El LAP necesita reiniciarse en modo FlexConnect"
+       ],
+       correct:1,
+       explanation:"Cuando una WLAN no tiene asignada explícitamente una interfaz dinámica, el WLC usa la interfaz management por defecto, lo que coloca a los clientes en la VLAN incorrecta. Corrección: WLANs → Edit CORP-NET → General → Interface = client-vlan30."},
+      {id:"t3",
+       scenario:"<b>Escenario C:</b> El cliente Laptop1 aparece asociado en el WLC pero el ping a 10.10.30.1 falla con 'Destination host unreachable'.",
+       question:"¿Cuál es la verificación de primera línea?",
+       options:[
+         "show wlan summary en el WLC",
+         "show interfaces trunk en SW1 — confirmar que VLAN 30 esté permitida en el trunk hacia el WLC",
+         "show capwap client config en el LAP",
+         "show dot11 associations en el LAP"
+       ],
+       correct:1,
+       explanation:"Si la VLAN 30 no está permitida en el trunk SW1 ↔ WLC, el tráfico desencapsulado por el WLC nunca alcanza al gateway en R1. Verificar con <code>show interfaces trunk</code> y, si es necesario, <code>switchport trunk allowed vlan add 30</code>."}
+    ]
+  },
+
+  lab3: {
+    id:"lab3",
+    code:"LAB·03",
+    title:"WPA2-Enterprise con RADIUS (802.1X)",
+    description:"Autenticación empresarial 802.1X-EAP contra servidor RADIUS. Doble SSID: corporativo (WPA2-Enterprise) y de invitados (WPA2-PSK). Demuestra AAA, separación de planos y portabilidad de identidades.",
+    topology:{
+      nodes:[
+        {id:"R1",type:"router",label:"R1",sub:"Gateway",x:70,y:200,data:{
+          "Modelo":"Cisco 2911",
+          "Sub-int VLAN 10/20/30/40":"Mgmt/AP/Corp/Guest",
+          "DHCP":"Pools por VLAN, opción 43 → 10.0.10.5"
+        }},
+        {id:"SW1",type:"switch-l3",label:"SW1",sub:"Core",x:230,y:200,data:{
+          "Modelo":"Catalyst 3650",
+          "VLANs":"10 Mgmt, 20 AP, 30 Corp, 40 Guest, 50 AAA",
+          "Trunks":"R1, WLC, RADIUS"
+        }},
+        {id:"RAD",type:"radius",label:"RADIUS",sub:"AAA Server",x:230,y:340,data:{
+          "Modelo":"Servidor AAA (PT)",
+          "IP":"10.0.50.10/24",
+          "Shared Secret":"R@dius$h@re2026",
+          "Usuario":"jorge.docente",
+          "Password":"Cisco123!",
+          "Protocolo":"RADIUS (UDP 1812 auth, 1813 acct)"
+        }},
+        {id:"WLC1",type:"wlc",label:"WLC1",sub:"Controller",x:420,y:90,data:{
+          "Modelo":"Cisco 3504 WLC",
+          "Mgmt":"10.0.10.5",
+          "AAA Server":"10.0.50.10 / R@dius$h@re2026",
+          "WLAN 1":"CORP-EAP (WPA2-Enterprise · 802.1X)",
+          "WLAN 2":"GUEST-PSK (WPA2-Personal)",
+          "Mapeo":"CORP→VLAN30, GUEST→VLAN40"
+        }},
+        {id:"LAP1",type:"ap-lwap",label:"LAP1",sub:"Lightweight",x:420,y:310,data:{
+          "Modelo":"AIR-LAP1142N",
+          "Modo":"Local",
+          "WLC":"10.0.10.5",
+          "SSIDs propagados":"CORP-EAP, GUEST-PSK"
+        }},
+        {id:"LT1",type:"laptop",label:"Laptop-Corp",sub:"802.1X Client",x:610,y:200,data:{
+          "Asocia a":"CORP-EAP",
+          "EAP method":"PEAP-MSCHAPv2",
+          "Identidad":"jorge.docente",
+          "Password":"Cisco123!"
+        }},
+        {id:"SP1",type:"phone",label:"Phone-Guest",sub:"PSK Client",x:610,y:330,data:{
+          "Asocia a":"GUEST-PSK",
+          "Passphrase":"Visita@2026"
+        }}
+      ],
+      links:[
+        {from:"R1",to:"SW1"},
+        {from:"SW1",to:"WLC1"},
+        {from:"SW1",to:"RAD"},
+        {from:"SW1",to:"LAP1"},
+        {from:"LAP1",to:"LT1",wireless:true},
+        {from:"LAP1",to:"SP1",wireless:true}
+      ]
+    },
+    phases:[
+      {id:"p1", title:"Fase 1 — Infraestructura, VLANs y RADIUS", steps:[
+        {id:"s1", title:"Configurar VLANs 10/20/30/40/50 y trunks en SW1",
+         concept:"<b>Concepto:</b> Cinco VLANs separan planos: gestión, infraestructura AP, clientes corporativos, clientes invitados y AAA. La separación lógica permite políticas QoS y ACLs diferenciadas.",
+         cli:"enable\nconf t\nhostname SW1\nvlan 10\n name MGMT\nvlan 20\n name AP-INFRA\nvlan 30\n name CORP\nvlan 40\n name GUEST\nvlan 50\n name AAA\nexit\ninterface F0/1\n switchport mode trunk\ninterface F0/2\n switchport mode trunk\ninterface F0/3\n switchport mode access\n switchport access vlan 20\ninterface F0/4\n switchport mode access\n switchport access vlan 50\nexit",
+         gui:["CLI del SW1","Pegar el bloque","show vlan brief para confirmar"],
+         verify:"show vlan brief",
+         expected:"10 MGMT  active\n20 AP-INFRA active\n30 CORP  active\n40 GUEST active\n50 AAA   active"},
+        {id:"s2", title:"Aprovisionar usuarios en el servidor RADIUS",
+         concept:"<b>Concepto:</b> El servidor mantiene una base de identidades. El WLC actúa como cliente RADIUS (NAS) y reenvía las credenciales del usuario al servidor para validación.",
+         cli:"! El servidor RADIUS de Packet Tracer se configura vía GUI:\n! Click Server → Services → AAA",
+         gui:["Click RADIUS → pestaña Services → AAA","Service: ON","Network Configuration: Client Name=WLC1, Client IP=10.0.10.5, Secret=R@dius$h@re2026, ServerType=Radius → Add","User Setup: Username=jorge.docente, Password=Cisco123! → Add"],
+         verify:"En la GUI: revisar Network Configuration y User Setup",
+         expected:"Client WLC1 listado · Usuario jorge.docente listado"}
+      ]},
+      {id:"p2", title:"Fase 2 — Registro CAPWAP del LAP", steps:[
+        {id:"s3", title:"Validar join CAPWAP de LAP1 al WLC1",
+         concept:"<b>Concepto:</b> Idéntico al Lab 2 — el LAP usa DHCP opción 43 para descubrir 10.0.10.5 y construye el túnel DTLS.",
+         cli:"! En el WLC (vía Telnet a 10.0.10.5):\nshow ap summary\nshow capwap client config",
+         gui:["WLC → Monitor → Access Points → All APs","Confirmar status REG para LAP1"],
+         verify:"show ap summary",
+         expected:"LAP1   AIR-LAP1142N   REG   default location"}
+      ]},
+      {id:"p3", title:"Fase 3 — Configuración AAA y dos WLANs en el WLC", steps:[
+        {id:"s4", title:"Agregar servidor RADIUS al WLC",
+         concept:"<b>Concepto:</b> El WLC actúa como NAS frente al RADIUS. El shared secret debe coincidir <i>exactamente</i> en ambos lados — un solo carácter de diferencia rompe la autenticación.",
+         cli:"! Configuración vía GUI del WLC",
+         gui:["Security → AAA → RADIUS → Authentication → New","Server IP: 10.0.50.10","Shared Secret: R@dius$h@re2026","Port: 1812","Server Status: Enabled","Apply"],
+         verify:"En GUI: Security → RADIUS Authentication Servers",
+         expected:"Server Index 1 · IP 10.0.50.10 · Status Enabled"},
+        {id:"s5", title:"Crear WLAN CORP-EAP con WPA2-Enterprise (802.1X)",
+         concept:"<b>Concepto:</b> WPA2-Enterprise utiliza EAP (típicamente PEAP-MSCHAPv2) para validar identidades individuales. El cliente entrega credenciales al AP, que las envía al WLC, que las consulta al RADIUS vía Access-Request.",
+         cli:"! Vía GUI del WLC",
+         gui:["WLANs → Create New → SSID: CORP-EAP, ID: 1","General → Interface: client-corp-vlan30 (crear primero en Controller → Interfaces)","Security → Layer 2: WPA2 + 802.1X","Security → AAA Servers → Authentication Server 1: 10.0.50.10","Status: Enabled → Apply"],
+         verify:"show wlan summary",
+         expected:"1  CORP-EAP   CORP-EAP   Enabled   client-corp-vlan30"},
+        {id:"s6", title:"Crear WLAN GUEST-PSK con WPA2-Personal",
+         concept:"<b>Concepto:</b> Coexistencia de métodos: usuarios corporativos por 802.1X, visitas por PSK. La separación por VLAN garantiza que el tráfico invitado no toque la red interna.",
+         cli:"! Vía GUI del WLC",
+         gui:["WLANs → Create New → SSID: GUEST-PSK, ID: 2","Interface: client-guest-vlan40","Security → Layer 2: WPA2 + PSK + AES","PSK: ASCII → Visita@2026","Apply"],
+         verify:"show wlan summary",
+         expected:"2  GUEST-PSK  GUEST-PSK  Enabled   client-guest-vlan40"}
+      ]},
+      {id:"p4", title:"Fase 4 — Validación dual: corporativo e invitado", steps:[
+        {id:"s7", title:"Asociar Laptop-Corp a CORP-EAP con credenciales 802.1X",
+         concept:"<b>Concepto:</b> Flujo EAPOL: el AP solicita Identity → cliente envía 'jorge.docente' → RADIUS desafía con PEAP → cliente responde con MSCHAPv2 → RADIUS valida → Access-Accept con VLAN.",
+         cli:"! Laptop-Corp: Desktop → PC Wireless → Connect\n! Seleccionar CORP-EAP → ingresar usuario y password",
+         gui:["Click Laptop-Corp → Desktop → PC Wireless","Connect → CORP-EAP","Authentication: WPA2-Enterprise","Usuario: jorge.docente · Password: Cisco123!","Verificar IP 10.0.30.x"],
+         verify:"ping 10.0.30.1",
+         expected:"Reply from 10.0.30.1: bytes=32 time<1ms TTL=255"},
+        {id:"s8", title:"Asociar Phone-Guest a GUEST-PSK",
+         concept:"<b>Concepto:</b> El cliente PSK no consulta al RADIUS — su autenticación termina en el 4-way handshake con el WLC. Queda aislado en VLAN 40.",
+         cli:"! En el smartphone: PC Wireless → Connect → GUEST-PSK\n! Passphrase: Visita@2026",
+         gui:["Click Phone-Guest → Desktop → PC Wireless","Connect → GUEST-PSK","Passphrase: Visita@2026","Confirmar IP 10.0.40.x y aislamiento de VLAN 30"],
+         verify:"ping 10.0.40.1\nping 10.0.30.10  (debe fallar si ACL guest-isolation activa)",
+         expected:"Gateway 10.0.40.1 → Reply OK\nCORP 10.0.30.10 → Request timed out (esperado)"}
+      ]}
+    ],
+    troubleshooting:[
+      {id:"t1",
+       scenario:"<b>Escenario A:</b> El cliente corporativo ingresa usuario y contraseña correctos pero recibe 'Authentication failed' en cada intento.",
+       question:"¿Cuál es la causa más probable, considerando que el ping desde el WLC al servidor 10.0.50.10 sí responde?",
+       options:[
+         "El cliente está usando WPA3 y el WLC solo soporta WPA2",
+         "Desajuste de Shared Secret entre el WLC y el servidor RADIUS",
+         "La VLAN del cliente no permite tráfico UDP 1812",
+         "El LAP no tiene CAPWAP establecido"
+       ],
+       correct:1,
+       explanation:"El error clásico: el shared secret se escribe con un carácter diferente en uno de los dos lados (ej. mayúscula/minúscula, espacio invisible al final). Validar literal por literal en ambos puntos. Verificación: el contador 'Auth Failures' del WLC sube y el RADIUS muestra 'Bad Shared Secret' en su log."},
+      {id:"t2",
+       scenario:"<b>Escenario B:</b> Phone-Guest se asocia exitosamente a GUEST-PSK y recibe IP de la VLAN 40 (10.0.40.x), pero adicionalmente puede pingear hosts de la VLAN corporativa (10.0.30.x). El diseño exige aislamiento.",
+       question:"¿Qué control falta implementar?",
+       options:[
+         "Activar Peer-to-Peer Blocking en la WLAN GUEST-PSK",
+         "Aplicar una ACL inter-VLAN entrante en R1 o en SW1 que deniegue tráfico desde VLAN 40 hacia VLAN 30",
+         "Cambiar el cifrado de AES a TKIP en la WLAN de invitados",
+         "Mover GUEST-PSK a la interfaz de management"
+       ],
+       correct:1,
+       explanation:"Peer-to-Peer Blocking solo aísla clientes <i>dentro</i> de la misma WLAN. Para evitar tráfico entre VLANs distintas se requiere una ACL aplicada en el dispositivo de enrutamiento (R1 o SVI del SW1). Ejemplo: <code>access-list 110 deny ip 10.0.40.0 0.0.0.255 10.0.30.0 0.0.0.255</code>."},
+      {id:"t3",
+       scenario:"<b>Escenario C:</b> Tras un reinicio del WLC, ninguno de los dos SSIDs se propaga aunque LAP1 figura como REG y los clientes no detectan ninguna red.",
+       question:"¿Qué configuración suele perderse en un WLC simulado sin guardado explícito?",
+       options:[
+         "El estado Enabled/Disabled de las WLANs",
+         "La passphrase WPA2",
+         "El registro CAPWAP del LAP",
+         "La opción 43 del DHCP"
+       ],
+       correct:0,
+       explanation:"Las WLANs pueden quedar deshabilitadas globalmente o individualmente tras un reinicio si la configuración no fue guardada con 'Save Configuration' en el WLC. Verificar: WLANs → cada WLAN debe figurar como Enabled. Confirmar también que el guardado se ejecutó con copy running-config startup-config."}
+    ]
+  }
+
+};
+
+/* ============================================================
+   STATE
+   ============================================================ */
+const STATE = {
+  currentLab: "lab1",
+  mode: "guide",
+  completed: { lab1:new Set(), lab2:new Set(), lab3:new Set() },
+  evalAnswered: { lab1:{}, lab2:{}, lab3:{} },
+  evalScore: 0,
+  timerStart: null,
+  timerInterval: null,
+  elapsed: 0
+};
+
+/* ============================================================
+   UTIL
+   ============================================================ */
+const $ = s => document.querySelector(s);
+const $$ = s => document.querySelectorAll(s);
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+
+function highlight(code){
+  return esc(code)
+    .replace(/^(!.*)$/gm,'<span class="cmt">$1</span>')
+    .replace(/\b(enable|configure terminal|conf t|interface|ip|hostname|vlan|name|switchport|encapsulation|dot1q|access|trunk|mode|description|no shutdown|exit|dot11|ssid|authentication|key-management|wpa|wpa-psk|ascii|guest-mode|encryption|ciphers|aes-ccm|ip dhcp|excluded-address|pool|network|default-router|dns-server|option|hex|bvi1|default-gateway|show|ping|copy|running-config|startup-config|range|debug)\b/g,'<span class="kw">$1</span>')
+    .replace(/(\b\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}(?:\/\d+)?\b)/g,'<span class="num">$1</span>')
+    .replace(/(\b\d+\b)/g,(m,$1,o,s)=>s.substr(o-25,25).includes('<span class="num">')?m:'<span class="num">'+$1+'</span>');
+}
+
+function toast(msg, color){
+  const t = $("#toast");
+  t.textContent = msg;
+  t.style.color = color || "var(--green)";
+  t.style.borderColor = color || "var(--green)";
+  t.classList.add("show");
+  clearTimeout(window._toastT);
+  window._toastT = setTimeout(()=>t.classList.remove("show"), 2200);
+}
+
+/* ============================================================
+   RENDER — SIDEBAR
+   ============================================================ */
+function renderSidebar(){
+  const nav = $("#nav");
+  let html = '<div class="nav-section">▸ LABORATORIOS</div>';
+  Object.values(LABS).forEach(lab=>{
+    const total = lab.phases.reduce((a,p)=>a+p.steps.length,0);
+    const done = STATE.completed[lab.id].size;
+    const pct = Math.round((done/total)*100);
+    const active = lab.id===STATE.currentLab?"active":"";
+    html += `
+      <div class="lab-item ${active}" onclick="selectLab('${lab.id}')">
+        <div class="lab-num">${lab.code}</div>
+        <div class="lab-title">${esc(lab.title)}</div>
+        <div class="progress"><div class="progress-fill" style="width:${pct}%"></div></div>
+        <div class="progress-text"><span>${done}/${total} pasos</span><span>${pct}%</span></div>
+      </div>`;
+  });
+  nav.innerHTML = html;
+}
+
+/* ============================================================
+   RENDER — TOPOLOGY SVG
+   ============================================================ */
+const ICONS = {
+  router: (x,y) => `
+    <ellipse cx="${x}" cy="${y}" rx="32" ry="20" class="node-shape" fill="#0f1729" stroke="#00f5ff" stroke-width="1.5"/>
+    <path d="M${x-18} ${y-4} L${x-10} ${y-4} M${x-14} ${y-8} L${x-10} ${y-4} L${x-14} 0 M${x+10} ${y+4} L${x+18} ${y+4} M${x+14} ${y+8} L${x+18} ${y+4} L${x+14} ${y}" stroke="#00f5ff" stroke-width="1.2" fill="none"/>
+    <path d="M${x-18} ${y+4} L${x-10} ${y+4} M${x+10} ${y-4} L${x+18} ${y-4}" stroke="#00f5ff" stroke-width="1.2"/>`,
+  "switch": (x,y) => `
+    <rect x="${x-32}" y="${y-16}" width="64" height="32" rx="3" class="node-shape" fill="#0f1729" stroke="#00f5ff" stroke-width="1.5"/>
+    <path d="M${x-18} ${y-4} L${x+18} ${y-4} M${x-18} ${y+4} L${x+18} ${y+4}" stroke="#00f5ff" stroke-width="1.2"/>
+    <path d="M${x-14} ${y-8} L${x-18} ${y-4} L${x-14} 0 M${x+14} ${y+8} L${x+18} ${y+4} L${x+14} ${y}" stroke="#00f5ff" stroke-width="1.2" fill="none"/>`,
+  "switch-l3": (x,y) => `
+    <rect x="${x-34}" y="${y-18}" width="68" height="36" rx="3" class="node-shape" fill="#0f1729" stroke="#a855f7" stroke-width="1.5"/>
+    <path d="M${x-20} ${y-6} L${x+20} ${y-6} M${x-20} ${y+6} L${x+20} ${y+6}" stroke="#a855f7" stroke-width="1.2"/>
+    <text x="${x}" y="${y+3}" class="node-sub" fill="#a855f7" font-weight="700" font-size="9">L3</text>`,
+  wlc: (x,y) => `
+    <rect x="${x-30}" y="${y-22}" width="60" height="44" rx="4" class="node-shape" fill="#0f1729" stroke="#ff2a6d" stroke-width="1.5"/>
+    <line x1="${x}" y1="${y-22}" x2="${x}" y2="${y-30}" stroke="#ff2a6d" stroke-width="1.5"/>
+    <circle cx="${x}" cy="${y-32}" r="2.5" fill="#ff2a6d"/>
+    <text x="${x}" y="${y-2}" class="node-sub" fill="#ff2a6d" font-weight="700" font-size="10">WLC</text>
+    <line x1="${x-18}" y1="${y+8}" x2="${x+18}" y2="${y+8}" stroke="#ff2a6d" stroke-width=".8" opacity=".6"/>
+    <line x1="${x-18}" y1="${y+13}" x2="${x+18}" y2="${y+13}" stroke="#ff2a6d" stroke-width=".8" opacity=".6"/>`,
+  "ap-aut": (x,y) => `
+    <circle cx="${x}" cy="${y}" r="20" class="node-shape" fill="#0f1729" stroke="#fbbf24" stroke-width="1.5"/>
+    <path d="M${x} ${y-22} L${x} ${y-30} M${x-3} ${y-28} L${x} ${y-30} L${x+3} ${y-28}" stroke="#fbbf24" stroke-width="1.5" fill="none"/>
+    <path d="M${x-10} ${y-2} Q${x} ${y-12} ${x+10} ${y-2}" stroke="#fbbf24" stroke-width="1.2" fill="none"/>
+    <path d="M${x-6} ${y+1} Q${x} ${y-4} ${x+6} ${y+1}" stroke="#fbbf24" stroke-width="1.2" fill="none"/>
+    <circle cx="${x}" cy="${y+5}" r="1.5" fill="#fbbf24"/>
+    <text x="${x}" y="${y+16}" class="node-sub" fill="#fbbf24" font-size="7">AUT</text>`,
+  "ap-lwap": (x,y) => `
+    <circle cx="${x}" cy="${y}" r="20" class="node-shape" fill="#0f1729" stroke="#00ff88" stroke-width="1.5"/>
+    <path d="M${x} ${y-22} L${x} ${y-30} M${x-3} ${y-28} L${x} ${y-30} L${x+3} ${y-28}" stroke="#00ff88" stroke-width="1.5" fill="none"/>
+    <path d="M${x-10} ${y-2} Q${x} ${y-12} ${x+10} ${y-2}" stroke="#00ff88" stroke-width="1.2" fill="none"/>
+    <path d="M${x-6} ${y+1} Q${x} ${y-4} ${x+6} ${y+1}" stroke="#00ff88" stroke-width="1.2" fill="none"/>
+    <circle cx="${x}" cy="${y+5}" r="1.5" fill="#00ff88"/>
+    <text x="${x}" y="${y+16}" class="node-sub" fill="#00ff88" font-size="7">LWAP</text>`,
+  radius: (x,y) => `
+    <rect x="${x-22}" y="${y-24}" width="44" height="48" rx="3" class="node-shape" fill="#0f1729" stroke="#a855f7" stroke-width="1.5"/>
+    <line x1="${x-14}" y1="${y-14}" x2="${x+14}" y2="${y-14}" stroke="#a855f7" stroke-width="1"/>
+    <line x1="${x-14}" y1="${y-6}" x2="${x+14}" y2="${y-6}" stroke="#a855f7" stroke-width="1"/>
+    <line x1="${x-14}" y1="${y+2}" x2="${x+14}" y2="${y+2}" stroke="#a855f7" stroke-width="1"/>
+    <circle cx="${x-10}" cy="${y+12}" r="2" fill="#00ff88"/>
+    <text x="${x}" y="${y+16}" class="node-sub" fill="#a855f7" font-size="8" text-anchor="start" transform="translate(-3 0)">AAA</text>`,
+  pc: (x,y) => `
+    <rect x="${x-18}" y="${y-14}" width="36" height="24" rx="2" class="node-shape" fill="#0f1729" stroke="#7d8aa3" stroke-width="1.4"/>
+    <rect x="${x-13}" y="${y-10}" width="26" height="16" fill="#00f5ff" opacity=".15"/>
+    <rect x="${x-10}" y="${y+12}" width="20" height="3" fill="#7d8aa3"/>`,
+  laptop: (x,y) => `
+    <path d="M${x-18} ${y-10} L${x+18} ${y-10} L${x+22} ${y+8} L${x-22} ${y+8} Z" class="node-shape" fill="#0f1729" stroke="#7d8aa3" stroke-width="1.4"/>
+    <rect x="${x-14}" y="${y-7}" width="28" height="13" fill="#00f5ff" opacity=".15"/>
+    <line x1="${x-22}" y1="${y+8}" x2="${x+22}" y2="${y+8}" stroke="#7d8aa3" stroke-width="2"/>`,
+  phone: (x,y) => `
+    <rect x="${x-10}" y="${y-18}" width="20" height="36" rx="3" class="node-shape" fill="#0f1729" stroke="#7d8aa3" stroke-width="1.4"/>
+    <rect x="${x-7}" y="${y-14}" width="14" height="24" fill="#ff2a6d" opacity=".15"/>
+    <circle cx="${x}" cy="${y+13}" r="1.5" fill="#7d8aa3"/>`
+};
+
+function renderTopology(lab){
+  const w = 720, h = 380;
+  let svg = `<svg class="topology-svg" viewBox="0 0 ${w} ${h}" xmlns="http://www.w3.org/2000/svg">`;
+  
+  // grid background
+  svg += `<defs>
+    <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(0,245,255,.05)" stroke-width=".5"/>
+    </pattern>
+  </defs>
+  <rect width="${w}" height="${h}" fill="url(#grid)"/>`;
+  
+  // links
+  lab.topology.links.forEach(l=>{
+    const a = lab.topology.nodes.find(n=>n.id===l.from);
+    const b = lab.topology.nodes.find(n=>n.id===l.to);
+    if(!a||!b) return;
+    const cls = l.wireless?"link wireless":l.capwap?"link":"link";
+    svg += `<line class="${cls}" x1="${a.x}" y1="${a.y}" x2="${b.x}" y2="${b.y}"/>`;
+    if(l.wireless){
+      // signal arcs
+      const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+      svg += `<circle class="signal-arc" cx="${a.x}" cy="${a.y}" r="30" stroke-dasharray="2 4"/>
+              <circle class="signal-arc" cx="${a.x}" cy="${a.y}" r="44" stroke-dasharray="2 6" opacity=".25"/>`;
+    }
+    if(l.capwap){
+      const mx=(a.x+b.x)/2, my=(a.y+b.y)/2;
+      svg += `<text x="${mx+6}" y="${my}" class="node-sub" fill="#00ff88" font-size="8" text-anchor="start">CAPWAP</text>`;
+    }
+  });
+  
+  // nodes
+  lab.topology.nodes.forEach(n=>{
+    const icon = ICONS[n.type] ? ICONS[n.type](n.x, n.y) : ICONS.pc(n.x, n.y);
+    svg += `<g class="node" onclick="showDevice('${lab.id}','${n.id}')">
+      ${icon}
+      <text x="${n.x}" y="${n.y+38}" class="node-label">${esc(n.label)}</text>
+      <text x="${n.x}" y="${n.y+50}" class="node-sub">${esc(n.sub)}</text>
+    </g>`;
+  });
+  
+  svg += `</svg>`;
+  
+  const legend = `
+    <div class="topology-legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#00f5ff;box-shadow:0 0 6px #00f5ff"></div>Router</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#a855f7;box-shadow:0 0 6px #a855f7"></div>Switch L3 / Server</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#ff2a6d;box-shadow:0 0 6px #ff2a6d"></div>WLC</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fbbf24;box-shadow:0 0 6px #fbbf24"></div>AP Autónomo</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#00ff88;box-shadow:0 0 6px #00ff88"></div>LWAP (CAPWAP)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#7d8aa3"></div>Cliente</div>
+      <div class="legend-item" style="margin-left:auto;color:var(--cyan)">▸ Click sobre cualquier nodo para ver detalles</div>
+    </div>`;
+  
+  return svg + legend;
+}
+
+/* ============================================================
+   RENDER — MAIN
+   ============================================================ */
+function renderLab(){
+  const lab = LABS[STATE.currentLab];
+  $("#labTitle").textContent = lab.code + " · " + lab.title;
+  $("#labDesc").textContent = lab.description;
+  renderHeaderRight();
+  
+  const total = lab.phases.reduce((a,p)=>a+p.steps.length,0);
+  const done = STATE.completed[lab.id].size;
+  const pct = Math.round((done/total)*100);
+  
+  let html = `
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">TOPOLOGÍA INTERACTIVA</div>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">${lab.topology.nodes.length} nodos · ${lab.topology.links.length} enlaces</span>
+      </div>
+      <div class="topology-wrap">${renderTopology(lab)}</div>
+    </div>
+    
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">GUÍA PASO A PASO · ${done}/${total} (${pct}%)</div>
+        <button class="btn primary" onclick="exportCLI('${lab.id}')">▸ EXPORTAR SCRIPT CLI</button>
+      </div>
+      ${lab.phases.map(ph=>renderPhase(ph,lab.id)).join("")}
+    </div>
+    
+    <div class="section">
+      <div class="section-head">
+        <div class="section-title">TROUBLESHOOTING · ESCENARIOS DE FALLA</div>
+        <span style="font-family:var(--mono);font-size:10px;color:var(--muted)">${lab.troubleshooting.length} casos</span>
+      </div>
+      <div style="padding:6px 16px 14px">
+        ${lab.troubleshooting.map(t=>renderTS(t,lab.id)).join("")}
+      </div>
+    </div>
+    
+    <div class="lab-complete ${done===total?"show":""}" id="labComplete">
+      <h3>▌ LAB COMPLETADO ▐</h3>
+      <p>Has completado los ${total} pasos del laboratorio. Reproduce el escenario completo en Packet Tracer usando el script CLI exportado.</p>
+    </div>
+  `;
+  $("#content").innerHTML = html;
+}
+
+function renderPhase(ph, labId){
+  const stepsDone = ph.steps.filter(s=>STATE.completed[labId].has(s.id)).length;
+  return `
+    <div class="phase" id="phase-${ph.id}">
+      <div class="phase-head" onclick="togglePhase('${ph.id}')">
+        <div class="phase-num">${ph.id.replace("p","")}</div>
+        <div class="phase-title">${esc(ph.title)}</div>
+        <div class="phase-count">${stepsDone}/${ph.steps.length}</div>
+        <div class="phase-toggle">▶</div>
+      </div>
+      <div class="phase-body">
+        ${ph.steps.map(s=>renderStep(s,labId)).join("")}
+      </div>
+    </div>`;
+}
+
+function renderStep(s, labId){
+  const done = STATE.completed[labId].has(s.id);
+  return `
+    <div class="step ${done?"done":""}" id="step-${s.id}">
+      <div class="step-head">
+        <div class="step-check" onclick="event.stopPropagation();toggleStep('${labId}','${s.id}')"></div>
+        <div class="step-title" onclick="toggleStepOpen('${s.id}')">${esc(s.title)}</div>
+        <div class="step-expand" onclick="toggleStepOpen('${s.id}')">▶</div>
+      </div>
+      <div class="step-body">
+        <div class="step-concept">${s.concept}</div>
+        <div class="tabs">
+          <button class="tab active" onclick="switchTab(this,'${s.id}-cli')">▸ CLI · CISCO IOS</button>
+          <button class="tab" onclick="switchTab(this,'${s.id}-gui')">▸ GUI · PACKET TRACER</button>
+          <button class="tab" onclick="switchTab(this,'${s.id}-ver')">▸ VERIFICACIÓN</button>
+        </div>
+        <div class="tab-pane active" id="${s.id}-cli">
+          <div class="code-label">CONFIGURACIÓN VÍA CLI</div>
+          <div class="code">${highlight(s.cli)}</div>
+        </div>
+        <div class="tab-pane" id="${s.id}-gui">
+          <div class="code-label">CONFIGURACIÓN VÍA GUI</div>
+          <ol class="gui-steps">${s.gui.map(g=>`<li>${esc(g)}</li>`).join("")}</ol>
+        </div>
+        <div class="tab-pane" id="${s.id}-ver">
+          <div class="code-label">COMANDO DE VERIFICACIÓN</div>
+          <div class="code">${highlight(s.verify)}</div>
+          <div class="verify-box">
+            <div class="verify-label">▸ OUTPUT ESPERADO</div>
+            <div class="code" style="background:transparent;border:none;padding:0;color:#9ce6a0">${esc(s.expected)}</div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+}
+
+function renderTS(t, labId){
+  const answered = STATE.evalAnswered[labId][t.id];
+  return `
+    <div class="ts-item">
+      <div class="ts-scenario"><b>▸ CASO</b><br><br>${t.scenario}</div>
+      <div class="ts-question">${esc(t.question)}</div>
+      <div class="ts-options">
+        ${t.options.map((o,i)=>{
+          let cls = "";
+          if(answered !== undefined){
+            cls = "locked ";
+            if(i === t.correct) cls += "correct";
+            else if(i === answered && answered !== t.correct) cls += "wrong";
+          }
+          return `<div class="ts-opt ${cls}" onclick="answerTS('${labId}','${t.id}',${i},${t.correct})">
+            <div class="ts-opt-key">${String.fromCharCode(65+i)}.</div>
+            <div>${esc(o)}</div>
+          </div>`;
+        }).join("")}
+      </div>
+      <div class="ts-explain ${answered!==undefined?"show":""}" id="exp-${t.id}">
+        <b style="color:var(--cyan);font-family:var(--mono);font-size:10px;letter-spacing:1.5px">▸ EXPLICACIÓN</b><br><br>${t.explanation}
+      </div>
+    </div>`;
+}
+
+function renderHeaderRight(){
+  const lab = LABS[STATE.currentLab];
+  const total = lab.phases.reduce((a,p)=>a+p.steps.length,0);
+  const done = STATE.completed[lab.id].size;
+  const pct = Math.round((done/total)*100);
+  
+  let html = `<div class="stat"><div class="stat-label">PROGRESO</div><div class="stat-val">${pct}%</div></div>`;
+  
+  if(STATE.mode === "eval"){
+    const t = formatTime(STATE.elapsed);
+    html += `<div class="stat timer"><div class="stat-label">TIEMPO</div><div class="stat-val">${t}</div></div>`;
+    const totalTs = Object.values(LABS).reduce((a,l)=>a+l.troubleshooting.length,0);
+    const correct = Object.keys(STATE.evalAnswered).reduce((a,k)=>{
+      return a + Object.entries(STATE.evalAnswered[k]).filter(([qid,ans])=>{
+        const q = LABS[k].troubleshooting.find(x=>x.id===qid);
+        return q && ans === q.correct;
+      }).length;
+    }, 0);
+    const bad = correct < totalTs/2 && Object.keys(STATE.evalAnswered[STATE.currentLab]).length>0;
+    html += `<div class="stat score ${bad?"bad":""}"><div class="stat-label">PUNTAJE</div><div class="stat-val">${correct}/${totalTs}</div></div>`;
+    html += `<button class="btn magenta" onclick="resetEval()">▸ REINICIAR EVAL</button>`;
+  }
+  
+  $("#headerRight").innerHTML = html;
+}
+
+function formatTime(ms){
+  const s = Math.floor(ms/1000);
+  const m = Math.floor(s/60);
+  return String(m).padStart(2,"0")+":"+String(s%60).padStart(2,"0");
+}
+
+/* ============================================================
+   ACTIONS
+   ============================================================ */
+function selectLab(id){
+  STATE.currentLab = id;
+  renderSidebar();
+  renderLab();
+}
+
+function setMode(m){
+  STATE.mode = m;
+  $$(".mode-btn").forEach(b=>b.classList.toggle("active", b.dataset.mode===m));
+  if(m === "eval"){
+    if(!STATE.timerStart){
+      STATE.timerStart = Date.now() - STATE.elapsed;
+      STATE.timerInterval = setInterval(()=>{
+        STATE.elapsed = Date.now() - STATE.timerStart;
+        renderHeaderRight();
+      }, 1000);
+    }
+    toast("▸ MODO EVAL ACTIVO · Cronómetro iniciado", "var(--magenta)");
+  } else {
+    if(STATE.timerInterval){
+      clearInterval(STATE.timerInterval);
+      STATE.timerInterval = null;
+    }
+    toast("▸ MODO GUÍA ACTIVO", "var(--cyan)");
+  }
+  renderHeaderRight();
+}
+
+function resetEval(){
+  STATE.evalAnswered = { lab1:{}, lab2:{}, lab3:{} };
+  STATE.elapsed = 0;
+  STATE.timerStart = STATE.mode==="eval" ? Date.now() : null;
+  renderLab();
+  toast("▸ Evaluación reiniciada", "var(--cyan)");
+}
+
+function togglePhase(pid){
+  $("#phase-"+pid).classList.toggle("open");
+}
+
+function toggleStepOpen(sid){
+  $("#step-"+sid).classList.toggle("open");
+}
+
+function toggleStep(labId, sid){
+  const set = STATE.completed[labId];
+  if(set.has(sid)){ set.delete(sid); toast("▸ Paso desmarcado","var(--muted)"); }
+  else { set.add(sid); toast("▸ Paso completado ✓","var(--green)"); }
+  renderSidebar();
+  renderLab();
+}
+
+function switchTab(btn, paneId){
+  const tabs = btn.parentElement;
+  tabs.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+  btn.classList.add("active");
+  const body = btn.closest(".step-body");
+  body.querySelectorAll(".tab-pane").forEach(p=>p.classList.remove("active"));
+  body.querySelector("#"+paneId).classList.add("active");
+}
+
+function showDevice(labId, nodeId){
+  const node = LABS[labId].topology.nodes.find(n=>n.id===nodeId);
+  if(!node) return;
+  const m = $("#modal");
+  m.className = "modal";
+  m.innerHTML = `
+    <div class="modal-head">
+      <h3>▸ ${esc(node.label)} · ${esc(node.sub)}</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      ${Object.entries(node.data).map(([k,v])=>`
+        <div class="kv"><div class="kv-k">${esc(k)}</div><div class="kv-v">${esc(v)}</div></div>
+      `).join("")}
+    </div>`;
+  $("#modalBg").classList.add("show");
+}
+
+function closeModal(){
+  $("#modalBg").classList.remove("show");
+}
+
+function answerTS(labId, qid, ans, correct){
+  if(STATE.evalAnswered[labId][qid] !== undefined) return;
+  STATE.evalAnswered[labId][qid] = ans;
+  if(ans === correct) toast("▸ ¡Correcto! ✓", "var(--green)");
+  else toast("▸ Incorrecto · Revisa la explicación", "var(--red)");
+  renderLab();
+  renderHeaderRight();
+}
+
+/* ============================================================
+   CLI EXPORT
+   ============================================================ */
+function exportCLI(labId){
+  const lab = LABS[labId];
+  const banner = `! ============================================================
+! ${lab.code} · ${lab.title}
+! AAY1107 — Técnicas y Administración en Monitoreo de Redes
+! Script generado: ${new Date().toLocaleString("es-CL")}
+! ============================================================
+`;
+  
+  let script = banner + "\n";
+  lab.phases.forEach(ph=>{
+    script += `\n! ----------------------------------------\n`;
+    script += `! ${ph.title}\n`;
+    script += `! ----------------------------------------\n`;
+    ph.steps.forEach(s=>{
+      script += `\n! → ${s.title}\n`;
+      script += s.cli + "\n";
+    });
+  });
+  
+  script += `\n! ============================================================
+! VERIFICACIÓN FINAL
+! ============================================================
+`;
+  lab.phases.forEach(ph=>{
+    ph.steps.forEach(s=>{
+      script += `\n! ${s.title}\n${s.verify}\n`;
+    });
+  });
+  
+  const m = $("#modal");
+  m.className = "modal export-modal";
+  m.innerHTML = `
+    <div class="modal-head">
+      <h3>▸ SCRIPT CLI EXPORTADO · ${lab.code}</h3>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:flex;gap:8px;margin-bottom:10px">
+        <button class="btn primary" onclick="copyScript()">▸ COPIAR AL PORTAPAPELES</button>
+        <button class="btn" onclick="downloadScript('${labId}')">▸ DESCARGAR .txt</button>
+        <span style="margin-left:auto;font-family:var(--mono);font-size:10px;color:var(--muted);align-self:center">
+          ${script.split("\n").length} líneas
+        </span>
+      </div>
+      <textarea id="scriptArea" style="width:100%;height:50vh;background:#05080f;color:#c8e8ff;border:1px solid var(--border);border-radius:4px;padding:12px;font-family:var(--mono);font-size:11px;line-height:1.5;resize:vertical">${esc(script)}</textarea>
+    </div>`;
+  $("#modalBg").classList.add("show");
+}
+
+function copyScript(){
+  const ta = $("#scriptArea");
+  ta.select();
+  try {
+    document.execCommand("copy");
+    toast("▸ Script copiado al portapapeles ✓","var(--green)");
+  } catch(e){
+    navigator.clipboard?.writeText(ta.value).then(()=>{
+      toast("▸ Script copiado ✓","var(--green)");
+    });
+  }
+}
+
+function downloadScript(labId){
+  const text = $("#scriptArea").value;
+  const blob = new Blob([text], {type:"text/plain"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = `AAY1107_${labId}_cli.txt`;
+  document.body.appendChild(a); a.click(); a.remove();
+  URL.revokeObjectURL(url);
+  toast("▸ Archivo descargado ✓","var(--green)");
+}
+
+/* ============================================================
+   KEYBOARD
+   ============================================================ */
+document.addEventListener("keydown", e=>{
+  if(e.key === "Escape") closeModal();
+  if(e.ctrlKey && e.key === "e"){ e.preventDefault(); exportCLI(STATE.currentLab); }
+});
+
+/* ============================================================
+   INIT
+   ============================================================ */
+renderSidebar();
+renderLab();
+
+</script>
+</body>
+</html>
